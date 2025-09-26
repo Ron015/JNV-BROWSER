@@ -1,92 +1,36 @@
 package ron.jnv.browser;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.bumptech.glide.Glide;
-import com.google.android.material.card.MaterialCardView;
-
 import java.util.List;
-
-public class WebsiteAdapter extends RecyclerView.Adapter<WebsiteAdapter.WebsiteViewHolder> {
-    
-    private List<Website> websites;
-    private WebsiteClickListener listener;
-    
-    public WebsiteAdapter(List<Website> websites, WebsiteClickListener listener) {
-        this.websites = websites;
+public class WebsiteAdapter extends RecyclerView.Adapter<WebsiteAdapter.VH> {
+    public interface OnItemClick { void onClick(Website w); }
+    private List<Website> list;
+    private OnItemClick listener;
+    public WebsiteAdapter(List<Website> list, OnItemClick listener){
+        this.list = list;
         this.listener = listener;
     }
-    
-    @NonNull
-    @Override
-    public WebsiteViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-            .inflate(R.layout.item_website_card, parent, false);
-        return new WebsiteViewHolder(view);
+    @Override public VH onCreateViewHolder(ViewGroup parent, int viewType){
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_website, parent, false);
+        return new VH(v);
     }
-    
-    @Override
-    public void onBindViewHolder(@NonNull WebsiteViewHolder holder, int position) {
-        Website website = websites.get(position);
-        holder.bind(website);
+    @Override public void onBindViewHolder(VH holder, int position){
+        Website w = list.get(position);
+        holder.title.setText(w.title);
+        holder.itemView.setOnClickListener(v -> listener.onClick(w));
     }
-    
-    @Override
-    public int getItemCount() {
-        return websites.size();
-    }
-    
-    public void updateWebsites(List<Website> newWebsites) {
-        this.websites = newWebsites;
-        notifyDataSetChanged();
-    }
-    
-    class WebsiteViewHolder extends RecyclerView.ViewHolder {
-        private MaterialCardView cardView;
-        private ImageView iconImageView;
-        private TextView titleTextView;
-        private TextView urlTextView;
-        
-        WebsiteViewHolder(@NonNull View itemView) {
-            super(itemView);
-            cardView = itemView.findViewById(R.id.cardView);
-            iconImageView = itemView.findViewById(R.id.iconImageView);
-            titleTextView = itemView.findViewById(R.id.titleTextView);
-            urlTextView = itemView.findViewById(R.id.urlTextView);
-            
-            cardView.setOnClickListener(v -> {
-                int position = getAdapterPosition();
-                if (listener != null && position != RecyclerView.NO_POSITION) {
-                    listener.onWebsiteClick(websites.get(position));
-                }
-            });
+    @Override public int getItemCount(){ return list.size(); }
+    static class VH extends RecyclerView.ViewHolder {
+        TextView title;
+        ImageView icon;
+        VH(View v){
+            super(v);
+            title = v.findViewById(R.id.w_title);
+            icon = v.findViewById(R.id.w_icon);
         }
-        
-        void bind(Website website) {
-            titleTextView.setText(website.getTitle());
-            urlTextView.setText(website.getUrl());
-            
-            // Load icon using Glide or set default
-            if (website.getIcon() != null && !website.getIcon().isEmpty()) {
-                Glide.with(itemView.getContext())
-                    .load(website.getIcon())
-                    .placeholder(android.R.drawable.ic_menu_web)
-                    .error(android.R.drawable.ic_menu_web)
-                    .into(iconImageView);
-            } else {
-                iconImageView.setImageResource(android.R.drawable.ic_menu_web);
-            }
-        }
-    }
-    
-    public interface WebsiteClickListener {
-        void onWebsiteClick(Website website);
     }
 }

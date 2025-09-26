@@ -1,2 +1,2 @@
-// settings.gradle
 include ':app'
+rootProject.name='JNVBrowser'
