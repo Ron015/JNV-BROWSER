@@ -7,11 +7,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+import com.google.android.material.card.MaterialCardView;
 
 import java.util.List;
 
@@ -50,11 +49,10 @@ public class WebsiteAdapter extends RecyclerView.Adapter<WebsiteAdapter.WebsiteV
     }
     
     class WebsiteViewHolder extends RecyclerView.ViewHolder {
-        private CardView cardView;
+        private MaterialCardView cardView;
         private ImageView iconImageView;
         private TextView titleTextView;
         private TextView urlTextView;
-        private TextView categoryTextView;
         
         WebsiteViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -62,62 +60,32 @@ public class WebsiteAdapter extends RecyclerView.Adapter<WebsiteAdapter.WebsiteV
             iconImageView = itemView.findViewById(R.id.iconImageView);
             titleTextView = itemView.findViewById(R.id.titleTextView);
             urlTextView = itemView.findViewById(R.id.urlTextView);
-            categoryTextView = itemView.findViewById(R.id.categoryTextView);
             
             cardView.setOnClickListener(v -> {
-                if (listener != null) {
+                if (listener != null && getAdapterPosition() != RecyclerView.NO_POSITION) {
                     listener.onWebsiteClick(websites.get(getAdapterPosition()));
                 }
-            });
-            
-            cardView.setOnLongClickListener(v -> {
-                if (listener != null) {
-                    listener.onWebsiteLongClick(websites.get(getAdapterPosition()));
-                    return true;
-                }
-                return false;
             });
         }
         
         void bind(Website website) {
             titleTextView.setText(website.getTitle());
             urlTextView.setText(website.getUrl());
-            categoryTextView.setText(website.getCategory());
             
-            // Load icon using Glide
+            // Load icon using Glide or set default
             if (website.getIcon() != null && !website.getIcon().isEmpty()) {
                 Glide.with(itemView.getContext())
                     .load(website.getIcon())
-                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .placeholder(android.R.drawable.ic_menu_web)
+                    .error(android.R.drawable.ic_menu_web)
                     .into(iconImageView);
             } else {
-                // Set default icon based on category
-                int iconRes = getIconForCategory(website.getCategory());
-                iconImageView.setImageResource(iconRes);
-            }
-            
-            // Visual feedback for frequently visited sites
-            if (website.getVisitCount() > 10) {
-                cardView.setCardBackgroundColor(
-                    itemView.getContext().getColor(R.color.colorPrimaryLight)
-                );
-            }
-        }
-        
-        private int getIconForCategory(String category) {
-            switch (category.toLowerCase()) {
-                case "search": return R.drawable.ic_search;
-                case "video": return R.drawable.ic_video;
-                case "development": return R.drawable.ic_code;
-                case "social": return R.drawable.ic_social;
-                case "blogging": return R.drawable.ic_blog;
-                default: return R.drawable.ic_web;
+                iconImageView.setImageResource(android.R.drawable.ic_menu_web);
             }
         }
     }
     
     public interface WebsiteClickListener {
         void onWebsiteClick(Website website);
-        void onWebsiteLongClick(Website website);
     }
 }

@@ -10,4 +10,9 @@
         <item name="cardBackgroundColor">@color/cardBackground</item>
         <item name="cardForegroundColor">@color/cardForeground</item>
     </style>
+    
+    <style name="WebsiteCardStyle" parent="Theme.Material3.Light">
+        <item name="cardBackgroundColor">@color/cardBackground</item>
+        <item name="cardForegroundColor">@color/cardForeground</item>
+    </style>
 </resources>

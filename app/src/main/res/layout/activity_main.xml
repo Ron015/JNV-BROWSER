@@ -1,75 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:background="@color/background">
 
-    <!-- App Bar -->
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/appBarLayout"
+    <!-- Toolbar -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/colorPrimary"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <!-- Search Bar -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
         android:background="@color/surface">
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="@color/surface"
-            android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"
-            app:menu="@menu/main_menu"
-            app:title="Smart Browser" />
-
-        <!-- Search Bar -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
+        <EditText
+            android:id="@+id/searchEditText"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            app:cardBackgroundColor="@color/searchBackground">
+            android:layout_weight="1"
+            android:hint="Search websites..."
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:padding="12dp"
+            android:background="@drawable/search_background" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="8dp">
+        <ImageButton
+            android:id="@+id/btnClearSearch"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@android:drawable/ic_menu_close_clear"
+            android:background="?attr/selectableItemBackgroundBorderless" />
 
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginStart="8dp"
-                    android:src="@drawable/ic_search" />
-
-                <AutoCompleteTextView
-                    android:id="@+id/searchAutoComplete"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    android:background="@null"
-                    android:hint="Search websites or enter URL"
-                    android:imeOptions="actionSearch"
-                    android:inputType="textUri"
-                    android:padding="12dp"
-                    android:textColor="@color/onSurface"
-                    android:textColorHint="@color/tabUnselected" />
-
-                <ImageButton
-                    android:id="@+id/btnClearSearch"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginEnd="8dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_clear" />
-
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-    </com.google.android.material.appbar.AppBarLayout>
+    </LinearLayout>
 
     <!-- Progress Bar -->
     <ProgressBar
@@ -77,95 +47,72 @@
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="4dp"
-        android:layout_marginTop="?attr/actionBarSize"
-        android:progressTint="@color/progressBar"
-        android:visibility="gone"
-        app:layout_anchor="@id/appBarLayout"
-        app:layout_anchorGravity="bottom" />
+        android:visibility="gone" />
 
-    <!-- Main Content -->
+    <!-- Home Screen with Cards -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:visibility="visible">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/websitesRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!-- Browser Container -->
     <FrameLayout
+        android:id="@+id/browserContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:visibility="gone">
 
-        <!-- Home Screen with Cards -->
-        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/swipeRefreshLayout"
+        <!-- Tab Layout -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabLayout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="visible">
+            android:layout_height="48dp"
+            android:background="@color/surface" />
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/websitesRecyclerView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="8dp" />
-
-        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-        <!-- Browser Container -->
+        <!-- WebView Container -->
         <FrameLayout
-            android:id="@+id/browserContainer"
+            android:id="@+id/webViewContainer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:visibility="gone">
+            android:layout_marginTop="48dp">
 
-            <!-- Tab Layout -->
-            <com.google.android.material.tabs.TabLayout
-                android:id="@+id/tabLayout"
+            <WebView
+                android:id="@+id/webView"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@color/surface"
-                app:tabBackground="@color/surface"
-                app:tabIndicatorColor="@color/tabSelected"
-                app:tabTextColor="@color/tabUnselected" />
+                android:layout_height="match_parent" />
 
-            <!-- WebView Container -->
-            <FrameLayout
-                android:id="@+id/webViewContainer"
+            <TextView
+                android:id="@+id/tvError"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginTop="48dp">
-
-                <WebView
-                    android:id="@+id/webView"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
-
-                <TextView
-                    android:id="@+id/tvError"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:padding="32dp"
-                    android:text="Unable to load page"
-                    android:textColor="@color/onSurface"
-                    android:visibility="gone" />
-
-            </FrameLayout>
-
-            <!-- Floating Action Button for New Tab -->
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/fabNewTab"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|end"
-                android:layout_margin="16dp"
-                android:src="@drawable/ic_add"
-                app:backgroundTint="@color/colorPrimary"
-                app:tint="@android:color/white" />
+                android:gravity="center"
+                android:padding="32dp"
+                android:text="Unable to load page"
+                android:textColor="@color/onSurface"
+                android:visibility="gone" />
 
         </FrameLayout>
+
+        <!-- Floating Action Button for New Tab -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabNewTab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="16dp"
+            android:src="@android:drawable/ic_input_add"
+            app:backgroundTint="@color/colorPrimary" />
+
     </FrameLayout>
 
-    <!-- Bottom Navigation -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavigation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="@color/surface"
-        app:menu="@menu/bottom_nav_menu" />
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</LinearLayout>

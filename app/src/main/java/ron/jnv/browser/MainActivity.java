@@ -3,20 +3,13 @@ package ron.jnv.browser;
 import android.annotation.SuppressLint;
 import android.app.DownloadManager;
 import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
-import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
@@ -24,67 +17,52 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
+import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class MainActivity extends AppCompatActivity implements WebsiteAdapter.WebsiteClickListener {
     
-    private static final String PREF_NAME = "browser_prefs";
-    private static final String KEY_WEBSITES = "websites";
-    private static final String KEY_THEME = "theme";
-    private static final String KEY_SEARCH_HISTORY = "search_history";
-    
-    private CoordinatorLayout coordinatorLayout;
     private RecyclerView websitesRecyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
     private FrameLayout browserContainer, webViewContainer;
     private TabLayout tabLayout;
     private ProgressBar progressBar;
-    private AutoCompleteTextView searchAutoComplete;
-    private MaterialToolbar toolbar;
-    private BottomNavigationView bottomNavigation;
+    private EditText searchEditText;
+    private Toolbar toolbar;
     private FloatingActionButton fabNewTab;
     private TextView tvError;
     
     private WebsiteAdapter websiteAdapter;
     private List<Website> websiteList = new ArrayList<>();
     private List<Website> filteredWebsiteList = new ArrayList<>();
-    private List<String> searchHistory = new ArrayList<>();
     
-    private ArrayAdapter<String> searchAdapter;
-    private SharedPreferences preferences;
     private ExecutorService executorService;
     private Handler mainHandler;
     
-    private List<BrowserTab> tabs = new ArrayList<>();
-    private int currentTabId = 0;
-    private boolean isDarkTheme = false;
+    private List<WebView> webViews = new ArrayList<>();
+    private int currentTabIndex = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,27 +70,21 @@ public class MainActivity extends AppCompatActivity implements WebsiteAdapter.We
         setContentView(R.layout.activity_main);
         
         initViews();
-        setupPreferences();
-        setupTheme();
         setupRecyclerView();
         setupSearch();
         setupWebView();
-        setupBottomNavigation();
-        setupToolbar();
-        loadWebsites();
+        loadWebsitesFromApi();
     }
 
     private void initViews() {
-        coordinatorLayout = findViewById(R.id.coordinatorLayout);
         websitesRecyclerView = findViewById(R.id.websitesRecyclerView);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         browserContainer = findViewById(R.id.browserContainer);
         webViewContainer = findViewById(R.id.webViewContainer);
         tabLayout = findViewById(R.id.tabLayout);
         progressBar = findViewById(R.id.progressBar);
-        searchAutoComplete = findViewById(R.id.searchAutoComplete);
+        searchEditText = findViewById(R.id.searchEditText);
         toolbar = findViewById(R.id.toolbar);
-        bottomNavigation = findViewById(R.id.bottomNavigation);
         fabNewTab = findViewById(R.id.fabNewTab);
         tvError = findViewById(R.id.tvError);
         
@@ -120,17 +92,7 @@ public class MainActivity extends AppCompatActivity implements WebsiteAdapter.We
         mainHandler = new Handler(Looper.getMainLooper());
         
         setSupportActionBar(toolbar);
-    }
-
-    private void setupPreferences() {
-        preferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
-        loadSearchHistory();
-    }
-
-    private void setupTheme() {
-        int theme = preferences.getInt(KEY_THEME, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
-        AppCompatDelegate.setDefaultNightMode(theme);
-        isDarkTheme = (theme == AppCompatDelegate.MODE_NIGHT_YES);
+        getSupportActionBar().setTitle("JNV Browser");
     }
 
     private void setupRecyclerView() {
@@ -138,26 +100,18 @@ public class MainActivity extends AppCompatActivity implements WebsiteAdapter.We
         websitesRecyclerView.setLayoutManager(new GridLayoutManager(this, 2));
         websitesRecyclerView.setAdapter(websiteAdapter);
         
-        swipeRefreshLayout.setOnRefreshListener(this::refreshWebsites);
+        swipeRefreshLayout.setOnRefreshListener(this::loadWebsitesFromApi);
     }
 
     private void setupSearch() {
-        searchAdapter = new ArrayAdapter<>(this, 
-            android.R.layout.simple_dropdown_item_1line, searchHistory);
-        searchAutoComplete.setAdapter(searchAdapter);
-        
-        searchAutoComplete.setOnItemClickListener((parent, view, position, id) -> {
-            String query = searchAdapter.getItem(position);
-            performSearch(query);
-        });
-        
-        searchAutoComplete.setOnEditorActionListener((v, actionId, event) -> {
-            performSearch(searchAutoComplete.getText().toString());
+        searchEditText.setOnEditorActionListener((v, actionId, event) -> {
+            performSearch(searchEditText.getText().toString());
             return true;
         });
         
-        findViewById(R.id.btnClearSearch).setOnClickListener(v -> {
-            searchAutoComplete.setText("");
+        ImageButton btnClearSearch = findViewById(R.id.btnClearSearch);
+        btnClearSearch.setOnClickListener(v -> {
+            searchEditText.setText("");
             filterWebsites("");
         });
     }
@@ -177,124 +131,99 @@ public class MainActivity extends AppCompatActivity implements WebsiteAdapter.We
 
             @Override
             public void onTabReselected(TabLayout.Tab tab) {
-                // Optional: Refresh tab or show tab overview
+                // Tab reselected - could show tab overview
             }
         });
-    }
-
-    private void setupBottomNavigation() {
-        bottomNavigation.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_home) {
-                showHomeScreen();
-                return true;
-            } else if (itemId == R.id.nav_back) {
-                goBack();
-                return true;
-            } else if (itemId == R.id.nav_forward) {
-                goForward();
-                return true;
-            } else if (itemId == R.id.nav_refresh) {
-                refreshCurrentTab();
-                return true;
-            } else if (itemId == R.id.nav_downloads) {
-                showDownloads();
-                return true;
-            }
-            return false;
-        });
-    }
-
-    private void setupToolbar() {
-        toolbar.setOnMenuItemClickListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.menu_settings) {
-                showSettings();
-                return true;
-            } else if (itemId == R.id.menu_downloads) {
-                showDownloads();
-                return true;
-            } else if (itemId == R.id.menu_history) {
-                showHistory();
-                return true;
-            } else if (itemId == R.id.menu_theme) {
-                toggleTheme();
-                return true;
-            }
-            return false;
-        });
-    }
-
-    private void loadWebsites() {
-        // Load from shared preferences first
-        String websitesJson = preferences.getString(KEY_WEBSITES, null);
-        if (websitesJson != null) {
-            Type listType = new TypeToken<List<Website>>(){}.getType();
-            List<Website> savedWebsites = new Gson().fromJson(websitesJson, listType);
-            if (savedWebsites != null) {
-                websiteList.addAll(savedWebsites);
-                filteredWebsiteList.addAll(websiteList);
-                websiteAdapter.notifyDataSetChanged();
-            }
-        }
         
-        // Then try to fetch from API
-        fetchWebsitesFromApi();
+        // Create initial tab
+        createNewTab("https://www.google.com");
     }
 
-    private void fetchWebsitesFromApi() {
+    @SuppressLint("SetJavaScriptEnabled")
+    private WebView createWebView() {
+        WebView webView = new WebView(this);
+        WebSettings webSettings = webView.getSettings();
+        
+        // Enable basic features
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setLoadWithOverviewMode(true);
+        webSettings.setUseWideViewPort(true);
+        
+        // Enable zoom controls
+        webSettings.setBuiltInZoomControls(true);
+        webSettings.setDisplayZoomControls(false);
+        
+        // Set WebView clients
+        webView.setWebViewClient(new AdvancedWebViewClient());
+        webView.setWebChromeClient(new AdvancedWebChromeClient());
+        webView.setDownloadListener(new AdvancedDownloadListener(this));
+        
+        return webView;
+    }
+
+    private void loadWebsitesFromApi() {
         swipeRefreshLayout.setRefreshing(true);
         
-        executorService.execute(() -> {
-            try {
-                // Simulate API call - replace with your actual API implementation
-                Thread.sleep(1000);
+        ApiService apiService = RetrofitClient.getApiService();
+        Call<List<Website>> call = apiService.getAllowedWebsites();
+        
+        call.enqueue(new Callback<List<Website>>() {
+            @Override
+            public void onResponse(Call<List<Website>> call, Response<List<Website>> response) {
+                swipeRefreshLayout.setRefreshing(false);
                 
-                List<Website> apiWebsites = new ArrayList<>();
-                apiWebsites.add(new Website("", "Google", "https://www.google.com", "Search"));
-                apiWebsites.add(new Website("", "YouTube", "https://www.youtube.com", "Video"));
-                apiWebsites.add(new Website("", "GitHub", "https://www.github.com", "Development"));
-                apiWebsites.add(new Website("", "Stack Overflow", "https://stackoverflow.com", "Q&A"));
-                apiWebsites.add(new Website("", "Medium", "https://medium.com", "Blogging"));
-                apiWebsites.add(new Website("", "Twitter", "https://twitter.com", "Social"));
-                
-                mainHandler.post(() -> {
+                if (response.isSuccessful() && response.body() != null) {
                     websiteList.clear();
-                    websiteList.addAll(apiWebsites);
+                    websiteList.addAll(response.body());
                     filteredWebsiteList.clear();
                     filteredWebsiteList.addAll(websiteList);
                     websiteAdapter.notifyDataSetChanged();
-                    saveWebsites();
-                    swipeRefreshLayout.setRefreshing(false);
-                });
+                    
+                    Toast.makeText(MainActivity.this, 
+                        "Loaded " + websiteList.size() + " websites", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(MainActivity.this, 
+                        "Failed to load websites", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Website>> call, Throwable t) {
+                swipeRefreshLayout.setRefreshing(false);
+                Toast.makeText(MainActivity.this, 
+                    "Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
                 
-            } catch (Exception e) {
-                mainHandler.post(() -> {
-                    swipeRefreshLayout.setRefreshing(false);
-                    Snackbar.make(coordinatorLayout, "Failed to load websites", Snackbar.LENGTH_LONG).show();
-                });
+                // Load default websites if API fails
+                loadDefaultWebsites();
             }
         });
     }
 
-    private void saveWebsites() {
-        String websitesJson = new Gson().toJson(websiteList);
-        preferences.edit().putString(KEY_WEBSITES, websitesJson).apply();
+    private void loadDefaultWebsites() {
+        // Fallback websites if API fails
+        websiteList.clear();
+        websiteList.add(new Website("", "Google", "https://www.google.com"));
+        websiteList.add(new Website("", "YouTube", "https://www.youtube.com"));
+        websiteList.add(new Website("", "GitHub", "https://www.github.com"));
+        websiteList.add(new Website("", "JNV Official", "https://navodaya.gov.in"));
+        
+        filteredWebsiteList.clear();
+        filteredWebsiteList.addAll(websiteList);
+        websiteAdapter.notifyDataSetChanged();
     }
 
     private void performSearch(String query) {
         if (TextUtils.isEmpty(query)) return;
         
-        addToSearchHistory(query);
-        
         if (query.startsWith("http://") || query.startsWith("https://")) {
             loadUrlInCurrentTab(query);
         } else {
-            // Search within websites
             filterWebsites(query);
-            
-            // Or search on Google
-            loadUrlInCurrentTab("https://www.google.com/search?q=" + query);
+            // Also search on Google if it's not a website filter
+            if (filteredWebsiteList.isEmpty()) {
+                loadUrlInCurrentTab("https://www.google.com/search?q=" + query);
+            }
         }
     }
 
@@ -306,8 +235,7 @@ public class MainActivity extends AppCompatActivity implements WebsiteAdapter.We
         } else {
             for (Website website : websiteList) {
                 if (website.getTitle().toLowerCase().contains(query.toLowerCase()) ||
-                    website.getUrl().toLowerCase().contains(query.toLowerCase()) ||
-                    website.getCategory().toLowerCase().contains(query.toLowerCase())) {
+                    website.getUrl().toLowerCase().contains(query.toLowerCase())) {
                     filteredWebsiteList.add(website);
                 }
             }
@@ -316,74 +244,51 @@ public class MainActivity extends AppCompatActivity implements WebsiteAdapter.We
         websiteAdapter.notifyDataSetChanged();
     }
 
-    private void addToSearchHistory(String query) {
-        if (!searchHistory.contains(query)) {
-            searchHistory.add(0, query);
-            // Keep only last 10 searches
-            if (searchHistory.size() > 10) {
-                searchHistory.remove(searchHistory.size() - 1);
-            }
-            saveSearchHistory();
-            searchAdapter.notifyDataSetChanged();
-        }
-    }
-
-    private void loadSearchHistory() {
-        String historyJson = preferences.getString(KEY_SEARCH_HISTORY, "[]");
-        Type listType = new TypeToken<List<String>>(){}.getType();
-        List<String> history = new Gson().fromJson(historyJson, listType);
-        if (history != null) {
-            searchHistory.addAll(history);
-        }
-    }
-
-    private void saveSearchHistory() {
-        String historyJson = new Gson().toJson(searchHistory);
-        preferences.edit().putString(KEY_SEARCH_HISTORY, historyJson).apply();
-    }
-
-    @SuppressLint("SetJavaScriptEnabled")
     private void createNewTab(String url) {
-        BrowserTab newTab = BrowserTab.newInstance(++currentTabId, url);
-        tabs.add(newTab);
+        WebView webView = createWebView();
+        webViews.add(webView);
         
         TabLayout.Tab tab = tabLayout.newTab();
         tab.setText("New Tab");
         tabLayout.addTab(tab, true);
         
-        getSupportFragmentManager().beginTransaction()
-            .add(R.id.webViewContainer, newTab, "tab_" + currentTabId)
-            .commit();
+        currentTabIndex = webViews.size() - 1;
+        updateWebViewContainer();
+        
+        if (url != null && !url.isEmpty()) {
+            webView.loadUrl(url);
+        }
         
         showBrowser();
     }
 
     private void switchTab(int position) {
-        if (position >= 0 && position < tabs.size()) {
-            BrowserTab tab = tabs.get(position);
-            // Show the selected tab and hide others
-            for (int i = 0; i < tabs.size(); i++) {
-                BrowserTab current = tabs.get(i);
-                if (i == position) {
-                    getSupportFragmentManager().beginTransaction().show(current).commit();
-                } else {
-                    getSupportFragmentManager().beginTransaction().hide(current).commit();
-                }
-            }
+        if (position >= 0 && position < webViews.size()) {
+            currentTabIndex = position;
+            updateWebViewContainer();
+            tabLayout.getTabAt(position).select();
+        }
+    }
+
+    private void updateWebViewContainer() {
+        webViewContainer.removeAllViews();
+        if (currentTabIndex >= 0 && currentTabIndex < webViews.size()) {
+            WebView currentWebView = webViews.get(currentTabIndex);
+            webViewContainer.addView(currentWebView);
         }
     }
 
     private void loadUrlInCurrentTab(String url) {
-        if (!tabs.isEmpty()) {
-            BrowserTab currentTab = tabs.get(tabLayout.getSelectedTabPosition());
-            currentTab.loadUrl(url);
+        if (currentTabIndex >= 0 && currentTabIndex < webViews.size()) {
+            WebView currentWebView = webViews.get(currentTabIndex);
+            currentWebView.loadUrl(url);
+            showBrowser();
         }
     }
 
     private void showHomeScreen() {
         browserContainer.setVisibility(View.GONE);
         websitesRecyclerView.setVisibility(View.VISIBLE);
-        bottomNavigation.getMenu().findItem(R.id.nav_home).setChecked(true);
     }
 
     private void showBrowser() {
@@ -392,96 +297,115 @@ public class MainActivity extends AppCompatActivity implements WebsiteAdapter.We
     }
 
     private void goBack() {
-        if (!tabs.isEmpty()) {
-            BrowserTab currentTab = tabs.get(tabLayout.getSelectedTabPosition());
-            if (currentTab.canGoBack()) {
-                currentTab.goBack();
-            }
-        }
-    }
-
-    private void goForward() {
-        if (!tabs.isEmpty()) {
-            BrowserTab currentTab = tabs.get(tabLayout.getSelectedTabPosition());
-            if (currentTab.canGoForward()) {
-                currentTab.goForward();
+        if (currentTabIndex >= 0 && currentTabIndex < webViews.size()) {
+            WebView currentWebView = webViews.get(currentTabIndex);
+            if (currentWebView.canGoBack()) {
+                currentWebView.goBack();
+            } else {
+                showHomeScreen();
             }
         }
     }
 
     private void refreshCurrentTab() {
-        if (!tabs.isEmpty()) {
-            BrowserTab currentTab = tabs.get(tabLayout.getSelectedTabPosition());
-            currentTab.reload();
+        if (currentTabIndex >= 0 && currentTabIndex < webViews.size()) {
+            WebView currentWebView = webViews.get(currentTabIndex);
+            currentWebView.reload();
         }
-    }
-
-    private void showDownloads() {
-        startActivity(new Intent(this, DownloadsActivity.class));
-    }
-
-    private void showSettings() {
-        // Implement settings activity/dialog
-        Toast.makeText(this, "Settings will be implemented", Toast.LENGTH_SHORT).show();
-    }
-
-    private void showHistory() {
-        // Implement history view
-        Toast.makeText(this, "History will be implemented", Toast.LENGTH_SHORT).show();
-    }
-
-    private void toggleTheme() {
-        int currentTheme = AppCompatDelegate.getDefaultNightMode();
-        int newTheme = currentTheme == AppCompatDelegate.MODE_NIGHT_YES ? 
-            AppCompatDelegate.MODE_NIGHT_NO : AppCompatDelegate.MODE_NIGHT_YES;
-        
-        AppCompatDelegate.setDefaultNightMode(newTheme);
-        preferences.edit().putInt(KEY_THEME, newTheme).apply();
-        recreate();
-    }
-
-    private void refreshWebsites() {
-        fetchWebsitesFromApi();
     }
 
     @Override
     public void onWebsiteClick(Website website) {
-        website.incrementVisitCount();
-        website.setLastVisited(System.currentTimeMillis());
-        
-        if (tabs.isEmpty()) {
-            createNewTab(website.getUrl());
-        } else {
-            loadUrlInCurrentTab(website.getUrl());
-        }
-        
-        showBrowser();
-    }
-
-    @Override
-    public void onWebsiteLongClick(Website website) {
-        // Show context menu for website (favorite, delete, etc.)
-        showWebsiteContextMenu(website);
-    }
-
-    private void showWebsiteContextMenu(Website website) {
-        // Implement context menu dialog
-        Toast.makeText(this, "Long press: " + website.getTitle(), Toast.LENGTH_SHORT).show();
+        loadUrlInCurrentTab(website.getUrl());
     }
 
     @Override
     public void onBackPressed() {
         if (browserContainer.getVisibility() == View.VISIBLE) {
-            if (!tabs.isEmpty()) {
-                BrowserTab currentTab = tabs.get(tabLayout.getSelectedTabPosition());
-                if (currentTab.canGoBack()) {
-                    currentTab.goBack();
+            if (currentTabIndex >= 0 && currentTabIndex < webViews.size()) {
+                WebView currentWebView = webViews.get(currentTabIndex);
+                if (currentWebView.canGoBack()) {
+                    currentWebView.goBack();
                     return;
                 }
             }
             showHomeScreen();
         } else {
             super.onBackPressed();
+        }
+    }
+
+    // WebView Client Classes
+    private class AdvancedWebViewClient extends WebViewClient {
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+            return false;
+        }
+
+        @Override
+        public void onPageStarted(WebView view, String url, Bitmap favicon) {
+            progressBar.setVisibility(View.VISIBLE);
+            tvError.setVisibility(View.GONE);
+        }
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            progressBar.setVisibility(View.GONE);
+            updateTabTitle(view.getTitle());
+        }
+
+        @Override
+        public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+            progressBar.setVisibility(View.GONE);
+            tvError.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private class AdvancedWebChromeClient extends WebChromeClient {
+        @Override
+        public void onProgressChanged(WebView view, int newProgress) {
+            progressBar.setProgress(newProgress);
+        }
+
+        @Override
+        public void onReceivedTitle(WebView view, String title) {
+            updateTabTitle(title);
+        }
+    }
+
+    private void updateTabTitle(String title) {
+        if (currentTabIndex >= 0 && currentTabIndex < tabLayout.getTabCount()) {
+            TabLayout.Tab tab = tabLayout.getTabAt(currentTabIndex);
+            if (tab != null && title != null) {
+                String tabTitle = title.length() > 20 ? title.substring(0, 20) + "..." : title;
+                tab.setText(tabTitle);
+            }
+        }
+    }
+
+    // Download Listener
+    private static class AdvancedDownloadListener implements DownloadListener {
+        private Context context;
+        
+        public AdvancedDownloadListener(Context context) {
+            this.context = context;
+        }
+        
+        @Override
+        public void onDownloadStart(String url, String userAgent, 
+                                   String contentDisposition, String mimetype, 
+                                   long contentLength) {
+            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+            
+            String fileName = URLUtil.guessFileName(url, contentDisposition, mimetype);
+            request.setTitle(fileName);
+            request.setDescription("Downloading file...");
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
+            
+            DownloadManager manager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+            manager.enqueue(request);
+            
+            Toast.makeText(context, "Download started: " + fileName, Toast.LENGTH_LONG).show();
         }
     }
 
@@ -492,7 +416,4 @@ public class MainActivity extends AppCompatActivity implements WebsiteAdapter.We
             executorService.shutdown();
         }
     }
-
-    // WebsiteAdapter and other inner classes would be in separate files
-    // Continuing with simplified version...
 }
