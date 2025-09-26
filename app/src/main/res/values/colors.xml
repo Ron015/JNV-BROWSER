@@ -7,11 +7,4 @@
     <color name="background">#F5F5F5</color>
     <color name="surface">#FFFFFF</color>
     <color name="onSurface">#212121</color>
-    <color name="cardBackground">#FFFFFF</color>
-    <color name="cardForeground">#212121</color>
-    <color name="searchBackground">#FFFFFF</color>
-    
-    <color name="tabSelected">#2196F3</color>
-    <color name="tabUnselected">#757575</color>
-    <color name="progressBar">#2196F3</color>
 </resources>
