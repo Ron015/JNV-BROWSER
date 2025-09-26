@@ -3,11 +3,10 @@ package ron.jnv.browser;
 import android.annotation.SuppressLint;
 import android.app.DownloadManager;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Looper;
 import android.text.TextUtils;
 import android.view.View;
 import android.webkit.DownloadListener;
@@ -35,8 +34,6 @@ import com.google.android.material.tabs.TabLayout;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -57,9 +54,6 @@ public class MainActivity extends AppCompatActivity implements WebsiteAdapter.We
     private WebsiteAdapter websiteAdapter;
     private List<Website> websiteList = new ArrayList<>();
     private List<Website> filteredWebsiteList = new ArrayList<>();
-    
-    private ExecutorService executorService;
-    private Handler mainHandler;
     
     private List<WebView> webViews = new ArrayList<>();
     private int currentTabIndex = 0;
@@ -88,11 +82,10 @@ public class MainActivity extends AppCompatActivity implements WebsiteAdapter.We
         fabNewTab = findViewById(R.id.fabNewTab);
         tvError = findViewById(R.id.tvError);
         
-        executorService = Executors.newSingleThreadExecutor();
-        mainHandler = new Handler(Looper.getMainLooper());
-        
         setSupportActionBar(toolbar);
-        getSupportActionBar().setTitle("JNV Browser");
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle("JNV Browser");
+        }
     }
 
     private void setupRecyclerView() {
@@ -131,7 +124,7 @@ public class MainActivity extends AppCompatActivity implements WebsiteAdapter.We
 
             @Override
             public void onTabReselected(TabLayout.Tab tab) {
-                // Tab reselected - could show tab overview
+                // Tab reselected
             }
         });
         
@@ -185,6 +178,7 @@ public class MainActivity extends AppCompatActivity implements WebsiteAdapter.We
                 } else {
                     Toast.makeText(MainActivity.this, 
                         "Failed to load websites", Toast.LENGTH_SHORT).show();
+                    loadDefaultWebsites();
                 }
             }
 
@@ -288,30 +282,12 @@ public class MainActivity extends AppCompatActivity implements WebsiteAdapter.We
 
     private void showHomeScreen() {
         browserContainer.setVisibility(View.GONE);
-        websitesRecyclerView.setVisibility(View.VISIBLE);
+        swipeRefreshLayout.setVisibility(View.VISIBLE);
     }
 
     private void showBrowser() {
-        websitesRecyclerView.setVisibility(View.GONE);
+        swipeRefreshLayout.setVisibility(View.GONE);
         browserContainer.setVisibility(View.VISIBLE);
-    }
-
-    private void goBack() {
-        if (currentTabIndex >= 0 && currentTabIndex < webViews.size()) {
-            WebView currentWebView = webViews.get(currentTabIndex);
-            if (currentWebView.canGoBack()) {
-                currentWebView.goBack();
-            } else {
-                showHomeScreen();
-            }
-        }
-    }
-
-    private void refreshCurrentTab() {
-        if (currentTabIndex >= 0 && currentTabIndex < webViews.size()) {
-            WebView currentWebView = webViews.get(currentTabIndex);
-            currentWebView.reload();
-        }
     }
 
     @Override
@@ -403,17 +379,10 @@ public class MainActivity extends AppCompatActivity implements WebsiteAdapter.We
             request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
             
             DownloadManager manager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-            manager.enqueue(request);
-            
-            Toast.makeText(context, "Download started: " + fileName, Toast.LENGTH_LONG).show();
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (executorService != null) {
-            executorService.shutdown();
+            if (manager != null) {
+                manager.enqueue(request);
+                Toast.makeText(context, "Download started: " + fileName, Toast.LENGTH_LONG).show();
+            }
         }
     }
 }

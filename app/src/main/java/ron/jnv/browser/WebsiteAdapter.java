@@ -62,8 +62,9 @@ public class WebsiteAdapter extends RecyclerView.Adapter<WebsiteAdapter.WebsiteV
             urlTextView = itemView.findViewById(R.id.urlTextView);
             
             cardView.setOnClickListener(v -> {
-                if (listener != null && getAdapterPosition() != RecyclerView.NO_POSITION) {
-                    listener.onWebsiteClick(websites.get(getAdapterPosition()));
+                int position = getAdapterPosition();
+                if (listener != null && position != RecyclerView.NO_POSITION) {
+                    listener.onWebsiteClick(websites.get(position));
                 }
             });
         }
