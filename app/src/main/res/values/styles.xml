@@ -1,0 +1,13 @@
+<resources>
+    <style name="AppTheme" parent="Theme.Material3.DayNight.DarkActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+    </style>
+
+    <style name="CardTheme" parent="Theme.Material3.Light">
+        <item name="cardBackgroundColor">@color/cardBackground</item>
+        <item name="cardForegroundColor">@color/cardForeground</item>
+    </style>
+</resources>
