@@ -78,16 +78,13 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                         
-                        Toast.makeText(MainActivity.this, "Loaded " + globalAllowedDomains.size() + " allowed domains", Toast.LENGTH_SHORT).show();
                         onComplete.run();
                     } catch (Exception e) {
                         e.printStackTrace();
-                        Toast.makeText(MainActivity.this, "Error parsing domains", Toast.LENGTH_SHORT).show();
                         onComplete.run(); // Still continue to load websites
                     }
                 },
                 error -> {
-                    Toast.makeText(MainActivity.this, "Error loading domains", Toast.LENGTH_SHORT).show();
                     onComplete.run(); // Still continue to load websites even if domains fail
                     error.printStackTrace();
                 });
@@ -119,7 +116,6 @@ public class MainActivity extends AppCompatActivity {
                         adapter.notifyDataSetChanged();
                     } catch (Exception e){
                         e.printStackTrace();
-                        Toast.makeText(MainActivity.this,"JSON Parsing Error",Toast.LENGTH_SHORT).show();
                     }
                     swipeRefresh.setRefreshing(false);
                 },
