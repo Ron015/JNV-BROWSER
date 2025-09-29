@@ -37,11 +37,10 @@ public class WebsiteAdapter extends RecyclerView.Adapter<WebsiteAdapter.MyViewHo
         Glide.with(context).load(item.getIcon()).into(holder.icon);
 
         holder.itemView.setOnClickListener(v -> {
-    Intent intent = new Intent(context, WebViewActivity.class);
-    intent.putExtra("url", item.getUrl() != null ? item.getUrl() : "https://google.com");
-    intent.putExtra("allowedDOM", item.getAllowedDOM() != null ? item.getAllowedDOM() : "google.com");
-    context.startActivity(intent);
-});
+            Intent intent = new Intent(context, WebViewActivity.class);
+            intent.putExtra("url", item.getUrl() != null ? item.getUrl() : "file:///android_asset/blocked.html");
+            context.startActivity(intent);
+        });
     }
 
     @Override

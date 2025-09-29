@@ -13,23 +13,22 @@ import android.webkit.WebViewClient;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Set;
 
 public class WebViewActivity extends AppCompatActivity {
 
     WebView webView;
     SwipeRefreshLayout swipeRefreshLayout;
-    String url, allowedDOM;
+    String url;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         url = getIntent().getStringExtra("url");
-        allowedDOM = getIntent().getStringExtra("allowedDOM");
 
         // Null safety
         if(url == null || url.isEmpty()) url = "file:///android_asset/blocked.html";
-        if(allowedDOM == null || allowedDOM.isEmpty()) allowedDOM = "blocked.htm";
 
         swipeRefreshLayout = new SwipeRefreshLayout(this);
         webView = new WebView(this);
@@ -53,9 +52,10 @@ public class WebViewActivity extends AppCompatActivity {
 
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request){
+                String requestUrl = request.getUrl().toString();
                 String host;
                 try {
-                    host = new URI(request.getUrl().toString()).getHost();
+                    host = new URI(requestUrl).getHost();
                 } catch (URISyntaxException e) {
                     host = null; // Invalid URL -> block
                 }
@@ -65,19 +65,22 @@ public class WebViewActivity extends AppCompatActivity {
                     return true;
                 }
 
-                if(host != null && host.contains(allowedDOM)){
-                    return false; // allow
+                if(host != null && isDomainAllowed(host)){
+                    return false; // allow navigation
                 } else {
                     loadBlockedPage();
-                    return true; // block
+                    return true; // block navigation
                 }
             }
         });
 
+        // Check if the initial URL is allowed before loading
         if(!isConnected()){
             loadOfflinePage();
-        } else {
+        } else if (isUrlAllowed(url)) {
             webView.loadUrl(url);
+        } else {
+            loadBlockedPage();
         }
     }
 
@@ -85,6 +88,33 @@ public class WebViewActivity extends AppCompatActivity {
         ConnectivityManager cm = (ConnectivityManager)getSystemService(CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
         return netInfo != null && netInfo.isConnected();
+    }
+
+    private boolean isUrlAllowed(String url) {
+        try {
+            URI uri = new URI(url);
+            String host = uri.getHost();
+            return host != null && isDomainAllowed(host);
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
+    private boolean isDomainAllowed(String host) {
+        // Get the global allowed domains from MainActivity
+        Set<String> allowedDomains = MainActivity.globalAllowedDomains;
+        
+        if (host == null) return false;
+        
+        host = host.toLowerCase();
+        
+        // Check if the host contains any allowed domain
+        for (String allowedDomain : allowedDomains) {
+            if (host.contains(allowedDomain)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void loadBlockedPage(){
