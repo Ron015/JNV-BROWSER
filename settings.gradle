@@ -1,2 +1,3 @@
+// settings.gradle
+rootProject.name = "JNV BROWSER"  // optional, repo ka name
 include ':app'
-rootProject.name='JNVBrowser'

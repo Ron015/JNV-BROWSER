@@ -1,70 +1,83 @@
 package ron.jnv.browser;
-import android.content.Intent;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.ProgressBar;
+
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import android.os.Bundle;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.Volley;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+
 import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+
 public class MainActivity extends AppCompatActivity {
-    RecyclerView rv;
-    ProgressBar progress;
-    ArrayList<Website> websites = new ArrayList<>();
-    static final String JSON_URL = "https://raw.githubusercontent.com/Ron015/JNV-BROWSER/main/weballow.json";
-    @Override protected void onCreate(Bundle s){
-        super.onCreate(s);
+
+    RecyclerView recyclerView;
+    WebsiteAdapter adapter;
+    ArrayList<WebsiteItem> list;
+    SwipeRefreshLayout swipeRefresh;
+
+    String DATA_URL = "https://raw.githubusercontent.com/Ron015/API-EXAMPLE/main/allowed.json";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        rv = findViewById(R.id.rv);
-        progress = findViewById(R.id.progress);
-        rv.setLayoutManager(new LinearLayoutManager(this));
-        fetchWebsites();
+
+        swipeRefresh = findViewById(R.id.swipeRefresh);
+        recyclerView = findViewById(R.id.recyclerView);
+
+        list = new ArrayList<>();
+        adapter = new WebsiteAdapter(this, list);
+
+        recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
+        recyclerView.setAdapter(adapter);
+
+        swipeRefresh.setOnRefreshListener(this::loadData);
+
+        loadData();
     }
-    void fetchWebsites(){
-        progress.setVisibility(View.VISIBLE);
-        ExecutorService ex = Executors.newSingleThreadExecutor();
-        ex.execute(() -> {
-            try {
-                URL url = new URL(JSON_URL);
-                HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                con.setConnectTimeout(7000);
-                con.setReadTimeout(7000);
-                InputStream is = con.getInputStream();
-                BufferedReader br = new BufferedReader(new InputStreamReader(is));
-                StringBuilder sb = new StringBuilder();
-                String line;
-                while ((line = br.readLine()) != null) sb.append(line);
-                br.close();
-                JSONArray arr = new JSONArray(sb.toString());
-                websites.clear();
-                for (int i=0;i<arr.length();i++){
-                    JSONObject o = arr.getJSONObject(i);
-                    websites.add(new Website(o.optString("icon"), o.optString("title"), o.optString("url")));
-                }
-                runOnUiThread(() -> {
-                    progress.setVisibility(View.GONE);
-                    WebsiteAdapter ad = new WebsiteAdapter(websites, w -> {
-                        Intent it = new Intent(MainActivity.this, BrowserActivity.class);
-                        it.putExtra("url", w.url);
-                        it.putExtra("title", w.title);
-                        startActivity(it);
-                    });
-                    rv.setAdapter(ad);
+
+    private void loadData(){
+        swipeRefresh.setRefreshing(true);
+        RequestQueue queue = Volley.newRequestQueue(this);
+
+        JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, DATA_URL, null,
+                response -> {
+                    list.clear();
+                    try {
+                        for(int i = 0; i < response.length(); i++){
+                            JSONObject obj = response.optJSONObject(i);
+                            if(obj != null){
+                                String title = obj.optString("title", "No Name");
+                                String url = obj.optString("url", "file:///android_asset/blocked.html");
+                                String icon = obj.optString("icon", "");
+                                String allowedDOM = obj.optString("allowedDOM", "blocked.html");
+
+                                list.add(new WebsiteItem(title, url, icon, allowedDOM));
+                            }
+                        }
+                        adapter.notifyDataSetChanged();
+                    } catch (Exception e){
+                        e.printStackTrace();
+                        Toast.makeText(MainActivity.this,"JSON Parsing Error",Toast.LENGTH_SHORT).show();
+                    }
+                    swipeRefresh.setRefreshing(false);
+                },
+                error -> {
+                    Toast.makeText(MainActivity.this,"Error loading data",Toast.LENGTH_SHORT).show();
+                    swipeRefresh.setRefreshing(false);
+                    error.printStackTrace();
                 });
-            } catch (Exception e){
-                e.printStackTrace();
-                runOnUiThread(() -> progress.setVisibility(View.GONE));
-            }
-        });
+
+        queue.add(request);
     }
 }

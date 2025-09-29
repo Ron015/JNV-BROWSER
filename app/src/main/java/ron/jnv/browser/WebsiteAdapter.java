@@ -1,36 +1,61 @@
 package ron.jnv.browser;
+
+import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.recyclerview.widget.RecyclerView;
-import java.util.List;
-public class WebsiteAdapter extends RecyclerView.Adapter<WebsiteAdapter.VH> {
-    public interface OnItemClick { void onClick(Website w); }
-    private List<Website> list;
-    private OnItemClick listener;
-    public WebsiteAdapter(List<Website> list, OnItemClick listener){
+
+import com.bumptech.glide.Glide;
+
+import java.util.ArrayList;
+
+public class WebsiteAdapter extends RecyclerView.Adapter<WebsiteAdapter.MyViewHolder> {
+
+    Context context;
+    ArrayList<WebsiteItem> list;
+
+    public WebsiteAdapter(Context context, ArrayList<WebsiteItem> list){
+        this.context = context;
         this.list = list;
-        this.listener = listener;
     }
-    @Override public VH onCreateViewHolder(ViewGroup parent, int viewType){
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_website, parent, false);
-        return new VH(v);
+
+    @Override
+    public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType){
+        View view = LayoutInflater.from(context).inflate(R.layout.grid_item, parent, false);
+        return new MyViewHolder(view);
     }
-    @Override public void onBindViewHolder(VH holder, int position){
-        Website w = list.get(position);
-        holder.title.setText(w.title);
-        holder.itemView.setOnClickListener(v -> listener.onClick(w));
+
+    @Override
+    public void onBindViewHolder(MyViewHolder holder, int position){
+        WebsiteItem item = list.get(position);
+        holder.text.setText(item.getTitle());
+        Glide.with(context).load(item.getIcon()).into(holder.icon);
+
+        holder.itemView.setOnClickListener(v -> {
+    Intent intent = new Intent(context, WebViewActivity.class);
+    intent.putExtra("url", item.getUrl() != null ? item.getUrl() : "https://google.com");
+    intent.putExtra("allowedDOM", item.getAllowedDOM() != null ? item.getAllowedDOM() : "google.com");
+    context.startActivity(intent);
+});
     }
-    @Override public int getItemCount(){ return list.size(); }
-    static class VH extends RecyclerView.ViewHolder {
-        TextView title;
+
+    @Override
+    public int getItemCount(){
+        return list.size();
+    }
+
+    public static class MyViewHolder extends RecyclerView.ViewHolder {
         ImageView icon;
-        VH(View v){
-            super(v);
-            title = v.findViewById(R.id.w_title);
-            icon = v.findViewById(R.id.w_icon);
+        TextView text;
+        public MyViewHolder(View itemView){
+            super(itemView);
+            icon = itemView.findViewById(R.id.itemImage);
+            text = itemView.findViewById(R.id.itemText);
         }
     }
 }
