@@ -95,7 +95,6 @@ public class BrowserActivity extends AppCompatActivity {
                 handler.post(() -> {
                     allowedDomains.clear();
                     allowedDomains.addAll(domains);
-                    Toast.makeText(this, "Loaded " + domains.size() + " allowed domains", Toast.LENGTH_SHORT).show();
                 });
             } catch (Exception e) {
                 e.printStackTrace();
