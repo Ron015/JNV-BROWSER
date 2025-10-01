@@ -12,9 +12,11 @@ import android.webkit.*;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import jnv.ron.browser.databinding.ActivityBrowserBinding;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -24,8 +26,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class BrowserActivity extends AppCompatActivity {
-    private ActivityBrowserBinding binding;
     private WebView webView;
+    private SwipeRefreshLayout swipeRefresh;
+    private Toolbar toolbar;
     private List<String> allowedDomains = new ArrayList<>();
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
     private Handler handler = new Handler();
@@ -34,8 +37,12 @@ public class BrowserActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding = ActivityBrowserBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+        setContentView(R.layout.activity_browser);
+
+        // Initialize views
+        toolbar = findViewById(R.id.toolbar);
+        swipeRefresh = findViewById(R.id.swipeRefresh);
+        webView = findViewById(R.id.webView);
 
         setupUI();
         loadAllowedDomains();
@@ -50,22 +57,22 @@ public class BrowserActivity extends AppCompatActivity {
     }
 
     private void setupUI() {
-        setSupportActionBar(binding.toolbar);
+        setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setTitle("Loading...");
         }
 
-        binding.toolbar.setNavigationOnClickListener(v -> onBackPressed());
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
         
-        binding.swipeRefresh.setColorSchemeResources(
+        swipeRefresh.setColorSchemeResources(
             android.R.color.holo_blue_bright,
             android.R.color.holo_green_light,
             android.R.color.holo_orange_light,
             android.R.color.holo_red_light
         );
         
-        binding.swipeRefresh.setOnRefreshListener(() -> {
+        swipeRefresh.setOnRefreshListener(() -> {
             webView.reload();
         });
     }
@@ -129,10 +136,8 @@ public class BrowserActivity extends AppCompatActivity {
         webSettings.setAllowFileAccessFromFileURLs(true);
         webSettings.setAllowUniversalAccessFromFileURLs(true);
         
-        // Cache settings
+        // Cache settings (remove deprecated methods)
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        webSettings.setAppCacheEnabled(true);
-        webSettings.setAppCachePath(getApplicationContext().getCacheDir().getPath());
 
         webView.setWebViewClient(new CustomWebViewClient());
         webView.setWebChromeClient(new CustomWebChromeClient());
@@ -218,7 +223,7 @@ public class BrowserActivity extends AppCompatActivity {
         @Override
         public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
             super.onPageStarted(view, url, favicon);
-            binding.swipeRefresh.setRefreshing(true);
+            swipeRefresh.setRefreshing(true);
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setTitle("Loading...");
             }
@@ -227,7 +232,7 @@ public class BrowserActivity extends AppCompatActivity {
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
-            binding.swipeRefresh.setRefreshing(false);
+            swipeRefresh.setRefreshing(false);
             if (getSupportActionBar() != null) {
                 String title = view.getTitle();
                 getSupportActionBar().setTitle(title != null && !title.isEmpty() ? title : "Browser");
@@ -306,9 +311,9 @@ public class BrowserActivity extends AppCompatActivity {
         public void onProgressChanged(WebView view, int newProgress) {
             super.onProgressChanged(view, newProgress);
             if (newProgress < 100) {
-                binding.swipeRefresh.setRefreshing(true);
+                swipeRefresh.setRefreshing(true);
             } else {
-                binding.swipeRefresh.setRefreshing(false);
+                swipeRefresh.setRefreshing(false);
             }
         }
     }

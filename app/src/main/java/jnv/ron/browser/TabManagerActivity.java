@@ -5,19 +5,24 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.WebView;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import java.util.ArrayList;
 import java.util.List;
-import jnv.ron.browser.databinding.ActivityTabManagerBinding;
 
 public class TabManagerActivity extends AppCompatActivity {
-    private ActivityTabManagerBinding binding;
+    private RecyclerView tabsRecyclerView;
+    private FloatingActionButton fabAddTab;
+    private Toolbar toolbar;
+    private ImageButton btnBack;
+    
     private TabAdapter tabAdapter;
     private List<Tab> tabs = new ArrayList<>();
     private int tabCounter = 1;
@@ -25,8 +30,13 @@ public class TabManagerActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding = ActivityTabManagerBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+        setContentView(R.layout.activity_tab_manager);
+
+        // Initialize views
+        toolbar = findViewById(R.id.toolbar);
+        tabsRecyclerView = findViewById(R.id.tabsRecyclerView);
+        fabAddTab = findViewById(R.id.fabAddTab);
+        btnBack = findViewById(R.id.btnBack);
 
         setupRecyclerView();
         setupClickListeners();
@@ -39,14 +49,14 @@ public class TabManagerActivity extends AppCompatActivity {
 
     private void setupRecyclerView() {
         tabAdapter = new TabAdapter();
-        binding.tabsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        binding.tabsRecyclerView.setAdapter(tabAdapter);
+        tabsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        tabsRecyclerView.setAdapter(tabAdapter);
     }
 
     private void setupClickListeners() {
-        binding.fabAddTab.setOnClickListener(v -> addNewTab("https://www.google.com"));
+        fabAddTab.setOnClickListener(v -> addNewTab("https://www.google.com"));
         
-        binding.btnBack.setOnClickListener(v -> finish());
+        btnBack.setOnClickListener(v -> finish());
     }
 
     private void addNewTab(String url) {
