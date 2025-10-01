@@ -2,14 +2,12 @@ package jnv.ron.browser;
 
 import android.app.DownloadManager;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.view.MenuItem;
 import android.view.View;
 import android.webkit.*;
 import android.widget.ImageButton;
@@ -19,12 +17,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
-import com.google.android.material.navigation.NavigationView;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -33,15 +30,13 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends AppCompatActivity {
     private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
-    private Toolbar toolbar;
-    private LinearLayout tabsContainer;
+    private LinearLayout tabsContainer, webViewsContainer;
     private ProgressBar progressBar;
     private WebView currentWebView;
-    private ImageButton btnNewTab, btnMenu;
-    private TextView txtNoTabs;
+    private ImageButton btnMenu, btnTabs, btnNewTab;
+    private TextView txtTabCount;
     
     private List<WebView> webViews = new ArrayList<>();
     private List<String> tabTitles = new ArrayList<>();
@@ -51,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private Handler handler = new Handler();
     private static final int PERMISSION_REQUEST_CODE = 100;
     private int currentTabIndex = 0;
+    private boolean tabsViewVisible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,35 +54,71 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setContentView(R.layout.activity_main);
 
         initializeViews();
-        setupToolbar();
-        setupNavigation();
         loadAllowedDomains();
         createHomeTab();
     }
 
     private void initializeViews() {
         drawerLayout = findViewById(R.id.drawerLayout);
-        navigationView = findViewById(R.id.navigationView);
-        toolbar = findViewById(R.id.toolbar);
         tabsContainer = findViewById(R.id.tabsContainer);
+        webViewsContainer = findViewById(R.id.webViewsContainer);
         progressBar = findViewById(R.id.progressBar);
-        btnNewTab = findViewById(R.id.btnNewTab);
         btnMenu = findViewById(R.id.btnMenu);
-        txtNoTabs = findViewById(R.id.txtNoTabs);
+        btnTabs = findViewById(R.id.btnTabs);
+        btnNewTab = findViewById(R.id.btnNewTab);
+        txtTabCount = findViewById(R.id.txtTabCount);
 
-        btnNewTab.setOnClickListener(v -> createNewTab("https://www.google.com"));
         btnMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
+        btnTabs.setOnClickListener(v -> toggleTabsView());
+        btnNewTab.setOnClickListener(v -> createNewTab("file:///android_asset/main.html"));
     }
 
-    private void setupToolbar() {
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle("Ron Browser");
+    private void toggleTabsView() {
+        tabsViewVisible = !tabsViewVisible;
+        if (tabsViewVisible) {
+            showTabsView();
+        } else {
+            hideTabsView();
         }
     }
 
-    private void setupNavigation() {
-        navigationView.setNavigationItemSelectedListener(this);
+    private void showTabsView() {
+        tabsContainer.setVisibility(View.VISIBLE);
+        webViewsContainer.setVisibility(View.GONE);
+        updateTabsView();
+    }
+
+    private void hideTabsView() {
+        tabsContainer.setVisibility(View.GONE);
+        webViewsContainer.setVisibility(View.VISIBLE);
+    }
+
+    private void updateTabsView() {
+        tabsContainer.removeAllViews();
+        
+        for (int i = 0; i < webViews.size(); i++) {
+            View tabView = getLayoutInflater().inflate(R.layout.item_tab, tabsContainer, false);
+            TextView tabTitle = tabView.findViewById(R.id.tabTitle);
+            TextView tabUrl = tabView.findViewById(R.id.tabUrl);
+            ImageButton btnClose = tabView.findViewById(R.id.btnClose);
+            
+            tabTitle.setText(tabTitles.get(i));
+            tabUrl.setText(tabUrls.get(i));
+            
+            if (i == currentTabIndex) {
+                tabView.setBackgroundColor(Color.parseColor("#E8F0FE"));
+            }
+            
+            final int tabIndex = i;
+            tabView.setOnClickListener(v -> {
+                switchToTab(tabIndex);
+                hideTabsView();
+            });
+            
+            btnClose.setOnClickListener(v -> closeTab(tabIndex));
+            
+            tabsContainer.addView(tabView);
+        }
     }
 
     private void loadAllowedDomains() {
@@ -104,13 +136,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
                 reader.close();
                 
-                handler.post(() -> {
-                    allowedDomains.clear();
-                    allowedDomains.addAll(domains);
-                });
+                handler.post(() -> allowedDomains.clear());
+                handler.post(() -> allowedDomains.addAll(domains));
             } catch (Exception e) {
                 e.printStackTrace();
-                // Fallback domains
                 handler.post(() -> {
                     allowedDomains.clear();
                     allowedDomains.add("google.com");
@@ -126,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void createHomeTab() {
         createNewTab("file:///android_asset/main.html");
         tabTitles.set(0, "Home");
-        updateTabUI(0);
+        updateTabCount();
     }
 
     private void createNewTab(String url) {
@@ -137,103 +166,60 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         tabTitles.add("New Tab");
         tabUrls.add(url);
         
+        webViewsContainer.addView(webView);
+        
         int tabIndex = webViews.size() - 1;
-        addTabToUI(tabIndex);
         switchToTab(tabIndex);
         
-        if (!url.equals("file:///android_asset/main.html")) {
+        if (url.equals("file:///android_asset/main.html")) {
+            tabTitles.set(tabIndex, "Home");
+        } else {
             webView.loadUrl(url);
         }
         
-        updateNoTabsVisibility();
+        updateTabCount();
     }
 
     private void setupWebView(WebView webView) {
         WebSettings webSettings = webView.getSettings();
         
-        // Enable JavaScript and DOM
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
         webSettings.setDatabaseEnabled(true);
         webSettings.setAllowFileAccess(true);
         webSettings.setAllowContentAccess(true);
-        
-        // Enable advanced features
         webSettings.setLoadWithOverviewMode(true);
         webSettings.setUseWideViewPort(true);
         webSettings.setBuiltInZoomControls(true);
         webSettings.setDisplayZoomControls(false);
         webSettings.setSupportZoom(true);
-        
-        // Enable permissions
         webSettings.setGeolocationEnabled(true);
         webSettings.setMediaPlaybackRequiresUserGesture(false);
         webSettings.setAllowFileAccessFromFileURLs(true);
         webSettings.setAllowUniversalAccessFromFileURLs(true);
-        
-        // Cache settings
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
         webView.setWebViewClient(new CustomWebViewClient());
         webView.setWebChromeClient(new CustomWebChromeClient());
         
-        // Handle downloads
         webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
             handleDownload(url, userAgent, contentDisposition, mimetype);
         });
         
-        // Add JavaScript interface for home page
         webView.addJavascriptInterface(new WebAppInterface(), "Android");
     }
 
-    private void addTabToUI(int tabIndex) {
-        View tabView = getLayoutInflater().inflate(R.layout.item_tab, tabsContainer, false);
-        TextView tabTitle = tabView.findViewById(R.id.tabTitle);
-        ImageButton btnClose = tabView.findViewById(R.id.btnCloseTab);
-        
-        tabTitle.setText(tabTitles.get(tabIndex));
-        tabView.setTag(tabIndex);
-        
-        tabView.setOnClickListener(v -> {
-            int index = (int) v.getTag();
-            switchToTab(index);
-        });
-        
-        btnClose.setOnClickListener(v -> {
-            int index = (int) tabView.getTag();
-            closeTab(index);
-        });
-        
-        tabsContainer.addView(tabView);
-        updateTabUI(tabIndex);
-    }
-
     private void switchToTab(int tabIndex) {
-        // Hide all webviews
-        for (WebView webView : webViews) {
-            webView.setVisibility(View.GONE);
+        for (int i = 0; i < webViews.size(); i++) {
+            webViews.get(i).setVisibility(i == tabIndex ? View.VISIBLE : View.GONE);
         }
         
-        // Remove active class from all tabs
-        for (int i = 0; i < tabsContainer.getChildCount(); i++) {
-            View tabView = tabsContainer.getChildAt(i);
-            tabView.setBackgroundColor(Color.TRANSPARENT);
-        }
-        
-        // Show selected webview
         currentWebView = webViews.get(tabIndex);
-        currentWebView.setVisibility(View.VISIBLE);
         currentTabIndex = tabIndex;
+        updateTabCount();
         
-        // Add active class to selected tab
-        if (tabIndex < tabsContainer.getChildCount()) {
-            View tabView = tabsContainer.getChildAt(tabIndex);
-            tabView.setBackgroundColor(Color.parseColor("#E3F2FD"));
-        }
-        
-        // Update toolbar title
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(tabTitles.get(tabIndex));
+        if (tabsViewVisible) {
+            updateTabsView();
         }
     }
 
@@ -243,45 +229,25 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return;
         }
         
-        // Remove webview
         WebView webViewToRemove = webViews.get(tabIndex);
         webViewToRemove.destroy();
         webViews.remove(tabIndex);
         tabTitles.remove(tabIndex);
         tabUrls.remove(tabIndex);
+        webViewsContainer.removeView(webViewToRemove);
         
-        // Remove tab from UI
-        tabsContainer.removeViewAt(tabIndex);
-        
-        // Update remaining tab tags
-        for (int i = tabIndex; i < tabsContainer.getChildCount(); i++) {
-            View tabView = tabsContainer.getChildAt(i);
-            tabView.setTag(i);
-        }
-        
-        // Switch to another tab
         int newTabIndex = Math.min(tabIndex, webViews.size() - 1);
         switchToTab(newTabIndex);
         
-        updateNoTabsVisibility();
-    }
-
-    private void updateTabUI(int tabIndex) {
-        if (tabIndex < tabsContainer.getChildCount()) {
-            View tabView = tabsContainer.getChildAt(tabIndex);
-            TextView tabTitle = tabView.findViewById(R.id.tabTitle);
-            tabTitle.setText(tabTitles.get(tabIndex));
-            
-            if (tabIndex == currentTabIndex) {
-                tabView.setBackgroundColor(Color.parseColor("#E3F2FD"));
-            } else {
-                tabView.setBackgroundColor(Color.TRANSPARENT);
-            }
+        if (tabsViewVisible) {
+            updateTabsView();
         }
+        
+        updateTabCount();
     }
 
-    private void updateNoTabsVisibility() {
-        txtNoTabs.setVisibility(webViews.isEmpty() ? View.VISIBLE : View.GONE);
+    private void updateTabCount() {
+        txtTabCount.setText(String.valueOf(webViews.size()));
     }
 
     private void handleDownload(String url, String userAgent, String contentDisposition, String mimetype) {
@@ -353,7 +319,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             super.onPageStarted(view, url, favicon);
             progressBar.setVisibility(View.VISIBLE);
             
-            // Update current tab URL
             int tabIndex = webViews.indexOf(view);
             if (tabIndex != -1) {
                 tabUrls.set(tabIndex, url);
@@ -365,16 +330,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             super.onPageFinished(view, url);
             progressBar.setVisibility(View.GONE);
             
-            // Update tab title with page title
             int tabIndex = webViews.indexOf(view);
             if (tabIndex != -1) {
                 String title = view.getTitle();
                 if (title != null && !title.isEmpty() && !url.equals("file:///android_asset/main.html")) {
                     tabTitles.set(tabIndex, title);
-                    updateTabUI(tabIndex);
-                    
-                    if (tabIndex == currentTabIndex && getSupportActionBar() != null) {
-                        getSupportActionBar().setTitle(title);
+                    if (tabsViewVisible) {
+                        updateTabsView();
                     }
                 }
             }
@@ -382,7 +344,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         private boolean isUrlAllowed(String url) {
             if (url.startsWith("file:///android_asset/")) {
-                return true; // Allow local files
+                return true;
             }
             
             try {
@@ -393,7 +355,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }
             } catch (Exception e) {
-                // Invalid URL
             }
             return false;
         }
@@ -459,10 +420,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             int tabIndex = webViews.indexOf(view);
             if (tabIndex != -1 && !view.getUrl().equals("file:///android_asset/main.html")) {
                 tabTitles.set(tabIndex, title != null && !title.isEmpty() ? title : "New Tab");
-                updateTabUI(tabIndex);
-                
-                if (tabIndex == currentTabIndex && getSupportActionBar() != null) {
-                    getSupportActionBar().setTitle(title);
+                if (tabsViewVisible) {
+                    updateTabsView();
                 }
             }
         }
@@ -483,40 +442,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     @Override
-    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        int id = item.getItemId();
-        
-        if (id == R.id.nav_home) {
-            switchToTab(0); // Switch to home tab
-        } else if (id == R.id.nav_new_tab) {
-            createNewTab("https://www.google.com");
-        } else if (id == R.id.nav_refresh) {
-            if (currentWebView != null) {
-                currentWebView.reload();
-            }
-        } else if (id == R.id.nav_downloads) {
-            openDownloads();
-        } else if (id == R.id.nav_settings) {
-            Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show();
-        }
-        
-        drawerLayout.closeDrawer(GravityCompat.START);
-        return true;
-    }
-
-    private void openDownloads() {
-        Intent intent = new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS);
-        startActivity(intent);
-    }
-
-    @Override
     public void onBackPressed() {
         if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
             drawerLayout.closeDrawer(GravityCompat.START);
+        } else if (tabsViewVisible) {
+            hideTabsView();
         } else if (currentWebView != null && currentWebView.canGoBack()) {
             currentWebView.goBack();
         } else if (currentTabIndex != 0) {
-            switchToTab(0); // Switch to home tab
+            switchToTab(0);
         } else {
             super.onBackPressed();
         }

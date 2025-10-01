@@ -12,109 +12,105 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Toolbar -->
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
+        <!-- Thin Top Bar -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
+            android:layout_height="48dp"
+            android:background="@android:color/white"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp"
+            android:elevation="4dp">
 
+            <!-- Menu Button -->
+            <ImageButton
+                android:id="@+id/btnMenu"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_menu"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Menu" />
+
+            <!-- Spacer -->
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Tabs Button -->
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center"
+                android:paddingHorizontal="12dp">
 
                 <ImageButton
-                    android:id="@+id/btnMenu"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/ic_menu_menu"
+                    android:id="@+id/btnTabs"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_tabs"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Menu" />
+                    android:contentDescription="Tabs" />
 
                 <TextView
-                    android:id="@+id/toolbarTitle"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Ron Browser"
-                    android:textColor="@android:color/white"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp" />
-
-                <ImageButton
-                    android:id="@+id/btnNewTab"
+                    android:id="@+id/txtTabCount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@android:drawable/ic_input_add"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="New Tab" />
+                    android:text="1"
+                    android:textSize="12sp"
+                    android:textColor="#666"
+                    android:layout_marginStart="4dp" />
 
             </LinearLayout>
 
-        </androidx.appcompat.widget.Toolbar>
+            <!-- New Tab Button -->
+            <ImageButton
+                android:id="@+id/btnNewTab"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_add"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="New Tab"
+                android:layout_marginStart="8dp" />
+
+        </LinearLayout>
 
         <!-- Progress Bar -->
         <ProgressBar
             android:id="@+id/progressBar"
             style="@android:style/Widget.ProgressBar.Horizontal"
             android:layout_width="match_parent"
-            android:layout_height="4dp"
+            android:layout_height="2dp"
             android:progress="0"
             android:visibility="gone" />
 
-        <!-- Tabs Container -->
-        <HorizontalScrollView
+        <!-- Tabs View (Hidden by default) -->
+        <LinearLayout
+            android:id="@+id/tabsContainer"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#F5F5F5"
-            android:padding="4dp">
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:background="#F8F9FA"
+            android:visibility="gone" />
 
-            <LinearLayout
-                android:id="@+id/tabsContainer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal" />
-
-        </HorizontalScrollView>
-
-        <!-- WebView Container -->
+        <!-- WebViews Container -->
         <FrameLayout
+            android:id="@+id/webViewsContainer"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1">
-
-            <!-- No Tabs Message -->
-            <TextView
-                android:id="@+id/txtNoTabs"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:text="No tabs open\nTap + to create a new tab"
-                android:textSize="18sp"
-                android:textColor="#666"
-                android:gravity="center"
-                android:textAlignment="center"
-                android:visibility="gone" />
-
-            <!-- WebViews will be added here programmatically -->
-
-        </FrameLayout>
+            android:layout_weight="1" />
 
     </LinearLayout>
 
-    <!-- Navigation Drawer -->
+    <!-- Navigation Drawer (Thin) -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navigationView"
-        android:layout_width="wrap_content"
+        android:layout_width="280dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        app:headerLayout="@layout/nav_header"
+        android:background="@android:color/white"
+        app:itemTextColor="@android:color/black"
+        app:itemIconTint="#666"
         app:menu="@menu/nav_menu" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

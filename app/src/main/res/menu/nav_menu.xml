@@ -3,23 +3,23 @@
     <group android:checkable="false">
         <item
             android:id="@+id/nav_home"
-            android:icon="@drawable/ic_menu_home"
+            android:icon="@drawable/ic_home"
             android:title="Home" />
         <item
             android:id="@+id/nav_new_tab"
-            android:icon="@android:drawable/ic_input_add"
+            android:icon="@drawable/ic_add"
             android:title="New Tab" />
         <item
             android:id="@+id/nav_refresh"
-            android:icon="@android:drawable/ic_menu_rotate"
+            android:icon="@drawable/ic_refresh"
             android:title="Refresh" />
         <item
             android:id="@+id/nav_downloads"
-            android:icon="@android:drawable/ic_menu_save"
+            android:icon="@drawable/ic_download"
             android:title="Downloads" />
         <item
             android:id="@+id/nav_settings"
-            android:icon="@android:drawable/ic_menu_preferences"
+            android:icon="@drawable/ic_settings"
             android:title="Settings" />
     </group>
 </menu>
