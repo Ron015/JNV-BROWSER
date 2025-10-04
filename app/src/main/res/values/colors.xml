@@ -13,6 +13,7 @@
     <color name="primary">#6366f1</color>
     <color name="primary_dark">#4f46e5</color>
     <color name="bg">#f8fafc</color>
+    <color name="background">#f8fafc</color>
     <color name="card_bg">#FFFFFFFF</color>
     <color name="text">#1e293b</color>
     <color name="text_light">#64748b</color>
