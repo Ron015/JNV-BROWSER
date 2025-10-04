@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Site Launcher</title>
+  <title>JNV BROWSER</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
@@ -53,6 +53,7 @@
       text-align: center;
       margin-bottom: 24px;
       padding-top: 8px;
+      position: relative;
     }
 
     h1 {
@@ -63,6 +64,33 @@
       background-clip: text;
       color: transparent;
       margin-bottom: 4px;
+    }
+
+    .header-actions {
+      position: absolute;
+      right: 0;
+      top: 0;
+      display: flex;
+      gap: 8px;
+    }
+
+    .header-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-light);
+      transition: all 0.2s ease;
+    }
+
+    .header-btn:hover {
+      color: var(--primary);
+      border-color: var(--primary);
     }
 
     .search-container {
@@ -114,6 +142,7 @@
       gap: 12px;
       cursor: pointer;
       border: 1px solid transparent;
+      position: relative;
     }
 
     .card:hover {
@@ -128,6 +157,12 @@
       border-radius: 10px;
       object-fit: cover;
       flex-shrink: 0;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .card-icon:hover {
+      transform: scale(1.1);
     }
 
     .card-content {
@@ -139,6 +174,15 @@
       font-size: 1rem;
       color: var(--text);
       line-height: 1.4;
+    }
+
+    .card-url {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .card-action {
@@ -155,6 +199,7 @@
       transition: all 0.2s ease;
       flex-shrink: 0;
       font-size: 0.9rem;
+      z-index: 2;
     }
 
     .card-action:hover {
@@ -208,6 +253,203 @@
       text-align: center;
     }
 
+    .favorite-btn {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      background: transparent;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      font-size: 0.7rem;
+      z-index: 2;
+      padding: 4px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      width: 15px;
+      height: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .favorite-btn:hover {
+      color: #f59e0b;
+      background: rgba(245, 158, 11, 0.1);
+    }
+
+    .favorite-btn.active {
+      color: #f59e0b;
+    }
+
+    .view-toggle {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 16px;
+      gap: 8px;
+    }
+
+    .view-toggle-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.875rem;
+      color: var(--text-light);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .view-toggle-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--card-bg);
+      color: var(--text);
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      border: 1px solid var(--border);
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    /* Icon Preview Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .icon-preview {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      max-width: 90vw;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      position: relative;
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.active .icon-preview {
+      transform: scale(1);
+    }
+
+    .preview-icon {
+      width: 120px;
+      height: 120px;
+      border-radius: 20px;
+      object-fit: cover;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .preview-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+    }
+
+    .preview-url {
+      font-size: 0.875rem;
+      color: var(--text-light);
+      text-align: center;
+      max-width: 300px;
+      word-break: break-all;
+    }
+
+    .preview-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .preview-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .preview-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .preview-btn.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .preview-btn.secondary:hover {
+      background: var(--border);
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: transparent;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      font-size: 1.25rem;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .close-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
+      color: var(--text);
+    }
+
     @media (max-width: 640px) {
       .card-grid {
         grid-template-columns: 1fr;
@@ -220,6 +462,16 @@
       body {
         padding: 12px;
       }
+
+      .preview-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .preview-btn {
+        width: 100%;
+        justify-content: center;
+      }
     }
 
     @media (max-width: 480px) {
@@ -231,18 +483,47 @@
         width: 40px;
         height: 40px;
       }
+      
+      .header-actions {
+        position: static;
+        justify-content: center;
+        margin-top: 12px;
+      }
+
+      .icon-preview {
+        padding: 20px;
+        margin: 16px;
+      }
+
+      .preview-icon {
+        width: 100px;
+        height: 100px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>Site Launcher</h1>
+      <h1>JNV BROWSER</h1>
+      <div class="header-actions">
+        <button class="header-btn" id="refreshBtn" title="Refresh">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+        <button class="header-btn" id="themeToggle" title="Toggle Theme">
+          <i class="fas fa-moon"></i>
+        </button>
+      </div>
     </header>
     
     <div class="search-container">
       <input type="text" class="search-box" id="searchInput" placeholder="Search sites...">
       <i class="fas fa-search search-icon"></i>
+    </div>
+    
+    <div class="view-toggle">
+      <button class="view-toggle-btn active" id="viewAllBtn">All Sites</button>
+      <button class="view-toggle-btn" id="viewFavoritesBtn">Favorites</button>
     </div>
     
     <div id="resultCount" class="result-count"></div>
@@ -252,53 +533,196 @@
     </div>
   </div>
 
+  <div class="toast" id="toast"></div>
+
+  <!-- Icon Preview Modal -->
+  <div class="modal-overlay" id="iconPreviewModal">
+    <div class="icon-preview">
+      <button class="close-btn" id="closePreview">
+        <i class="fas fa-times"></i>
+      </button>
+      <img src="" alt="Site Icon" class="preview-icon" id="previewIcon">
+      <h3 class="preview-title" id="previewTitle"></h3>
+      <p class="preview-url" id="previewUrl"></p>
+      <div class="preview-actions">
+        <button class="preview-btn" id="previewOpenSite">
+          <i class="fas fa-external-link-alt"></i>
+          Open Site
+        </button>
+        <button class="preview-btn secondary" id="previewToggleFavorite">
+          <i class="fas fa-star"></i>
+          Add to Favorites
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
+    // Global state
+    const state = {
+      sites: [],
+      favorites: JSON.parse(localStorage.getItem('jnvFavorites')) || [],
+      viewMode: 'all', // 'all' or 'favorites'
+      theme: localStorage.getItem('jnvTheme') || 'auto',
+      currentPreviewSite: null
+    };
+
+    // Default icon for fallback
+    const defaultIcon = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDQiIGhlaWdodD0iNDQiIHZpZXdCb3g9IjAgMCA0NCA0NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ0IiBoZWlnaHQ9IjQ0IiByeD0iMTAiIGZpbGw9IiM2MzY2RjEiLz4KPHN2ZyB4PSIxMiIgeT0iMTIiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CjxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjIiIHJ5PSIyIj48L3JlY3Q+CjxjaXJjbGUgY3g9IjguNSIgY3k9IjguNSIgcj0iMS41Ij48L2NpcmNsZT4KPHBvbHlsaW5lIHBvaW50cz0iMjEuMTUgMTUuODggMTUgMTEuNSAyMSAxNS41IDIxIDE1LjUgMjEuMTUgMTUuODgiPjwvcG9seWxpbmU+Cjwvc3ZnPgo8L3N2Zz4K';
+
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', () => {
+      load();
+      setupEventListeners();
+      applyTheme();
+    });
+
     async function load() {
       try {
+        showLoading();
         const r = await fetch("https://raw.githubusercontent.com/Ron015/API-EXAMPLE/main/allowed.json");
         const arr = await r.json();
-        const el = document.getElementById("list");
-        el.className = "card-grid";
         
-        if (arr.length === 0) {
-          showEmptyState();
-          return;
-        }
+        // Enhance sites with favicon URLs
+        const enhancedSites = await Promise.all(
+          arr.map(async site => {
+            // Use the icon from API if available, otherwise try to fetch favicon
+            let iconUrl = site.icon || defaultIcon;
+            
+            // If no icon in API, try to get favicon from Google's service
+            if (!site.icon) {
+              try {
+                const faviconUrl = `https://www.google.com/s2/favicons?domain=${new URL(site.url).hostname}&sz=64`;
+                // Test if the favicon exists
+                const response = await fetch(faviconUrl);
+                if (response.ok) {
+                  iconUrl = faviconUrl;
+                }
+              } catch (e) {
+                console.log(`Could not fetch favicon for ${site.url}`);
+              }
+            }
+            
+            return {
+              ...site,
+              icon: iconUrl,
+              isFavorite: state.favorites.includes(site.url)
+            };
+          })
+        );
         
-        // Store the data for search functionality
-        window.siteData = arr;
-        
-        renderSites(arr);
-        updateResultCount(arr.length);
+        state.sites = enhancedSites;
+        renderSites(getCurrentViewSites());
       } catch(e) {
         console.error("Error loading from API:", e);
         showErrorState();
       }
     }
 
+    function getCurrentViewSites() {
+      if (state.viewMode === 'favorites') {
+        return state.sites.filter(site => site.isFavorite);
+      }
+      return state.sites;
+    }
+
     function renderSites(sites) {
       const el = document.getElementById("list");
-      el.innerHTML = '';
+      el.className = "card-grid";
       
       if (sites.length === 0) {
-        showEmptyState('No sites match your search');
+        showEmptyState(state.viewMode === 'favorites' ? 'No favorites yet' : 'No sites match your search');
         return;
       }
+      
+      el.innerHTML = '';
       
       sites.forEach(s => {
         const d = document.createElement("div");
         d.className = "card";
+        d.setAttribute('data-url', s.url);
+        
         d.innerHTML = `
-          <img src="${s.icon}" class="card-icon" alt="${s.title}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDQiIGhlaWdodD0iNDQiIHZpZXdCb3g9IjAgMCA0NCA0NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ0IiBoZWlnaHQ9IjQ0IiByeD0iMTAiIGZpbGw9IiM2MzY2RjEiLz4KPHN2ZyB4PSIxMiIgeT0iMTIiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CjxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjIiIHJ5PSIyIj48L3JlY3Q+CjxjaXJjbGUgY3g9IjguNSIgY3k9IjguNSIgcj0iMS41Ij48L2NpcmNsZT4KPHBvbHlsaW5lIHBvaW50cz0iMjEuMTUgMTUuODggMTUgMTEuNSAyMSAxNS41IDIxIDE1LjUgMjEuMTUgMTUuODgiPjwvcG9seWxpbmU+Cjwvc3ZnPgo8L3N2Zz4K'" />
+          <img src="${s.icon}" class="card-icon" alt="${s.title}" onerror="this.src='${defaultIcon}'" />
           <div class="card-content">
             <div class="card-title">${s.title}</div>
+            <div class="card-url">${new URL(s.url).hostname}</div>
           </div>
-          <button class="card-action" onclick="openSite('${s.url}')">
+          <button class="card-action">
             <i class="fas fa-external-link-alt"></i>
           </button>
+          <button class="favorite-btn ${s.isFavorite ? 'active' : ''}" title="${s.isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
+            <i class="fas fa-star"></i>
+          </button>
         `;
+        
+        // Make entire card clickable
+        d.addEventListener('click', (e) => {
+          // Don't trigger if clicking the favorite button, card action, or icon
+          if (!e.target.closest('.favorite-btn') && !e.target.closest('.card-action') && !e.target.closest('.card-icon')) {
+            openSite(s.url);
+          }
+        });
+        
+        // Icon click handler for preview
+        const icon = d.querySelector('.card-icon');
+        icon.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showIconPreview(s);
+        });
+        
+        // Favorite button handler
+        const favBtn = d.querySelector('.favorite-btn');
+        favBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleFavorite(s.url);
+        });
+        
+        // Card action button handler
+        const actionBtn = d.querySelector('.card-action');
+        actionBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openSite(s.url);
+        });
+        
         el.appendChild(d);
       });
+      
+      updateResultCount(sites.length);
+    }
+
+    function showIconPreview(site) {
+      state.currentPreviewSite = site;
+      
+      // Update preview modal content
+      document.getElementById('previewIcon').src = site.icon;
+      document.getElementById('previewTitle').textContent = site.title;
+      document.getElementById('previewUrl').textContent = site.url;
+      
+      // Update favorite button in preview
+      const favBtn = document.getElementById('previewToggleFavorite');
+      const favIcon = favBtn.querySelector('i');
+      if (site.isFavorite) {
+        favBtn.innerHTML = '<i class="fas fa-star"></i> Remove from Favorites';
+        favBtn.classList.add('active');
+      } else {
+        favBtn.innerHTML = '<i class="fas fa-star"></i> Add to Favorites';
+        favBtn.classList.remove('active');
+      }
+      
+      // Show the modal
+      document.getElementById('iconPreviewModal').classList.add('active');
+    }
+
+    function hideIconPreview() {
+      document.getElementById('iconPreviewModal').classList.remove('active');
+      state.currentPreviewSite = null;
+    }
+
+    function showLoading() {
+      const el = document.getElementById("list");
+      el.className = "loading";
+      el.innerHTML = '<div class="spinner"></div>';
     }
 
     function showEmptyState(message = 'No sites available') {
@@ -328,7 +752,8 @@
       if (count === 0) {
         resultEl.textContent = 'No sites found';
       } else {
-        resultEl.textContent = `${count} site${count !== 1 ? 's' : ''}`;
+        const total = state.viewMode === 'favorites' ? state.favorites.length : state.sites.length;
+        resultEl.textContent = `${count} of ${total} site${total !== 1 ? 's' : ''}`;
       }
     }
 
@@ -341,45 +766,201 @@
       }
     }
 
+    function toggleFavorite(url) {
+      const index = state.favorites.indexOf(url);
+      
+      if (index > -1) {
+        // Remove from favorites
+        state.favorites.splice(index, 1);
+        showToast('Removed from favorites');
+      } else {
+        // Add to favorites
+        state.favorites.push(url);
+        showToast('Added to favorites');
+      }
+      
+      // Update localStorage
+      localStorage.setItem('jnvFavorites', JSON.stringify(state.favorites));
+      
+      // Update site data
+      state.sites = state.sites.map(site => ({
+        ...site,
+        isFavorite: state.favorites.includes(site.url)
+      }));
+      
+      // Re-render
+      renderSites(getCurrentViewSites());
+      
+      // Update preview modal if it's open for this site
+      if (state.currentPreviewSite && state.currentPreviewSite.url === url) {
+        state.currentPreviewSite.isFavorite = !state.currentPreviewSite.isFavorite;
+        const favBtn = document.getElementById('previewToggleFavorite');
+        if (state.currentPreviewSite.isFavorite) {
+          favBtn.innerHTML = '<i class="fas fa-star"></i> Remove from Favorites';
+          favBtn.classList.add('active');
+        } else {
+          favBtn.innerHTML = '<i class="fas fa-star"></i> Add to Favorites';
+          favBtn.classList.remove('active');
+        }
+      }
+    }
+
     function filterSites() {
       const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
       
       if (!searchTerm) {
-        renderSites(window.siteData);
-        updateResultCount(window.siteData.length);
+        renderSites(getCurrentViewSites());
         return;
       }
       
-      const filteredSites = window.siteData.filter(site => {
+      const filteredSites = getCurrentViewSites().filter(site => {
         const title = site.title.toLowerCase();
-        return title.includes(searchTerm);
+        const url = site.url.toLowerCase();
+        return title.includes(searchTerm) || url.includes(searchTerm);
       });
       
       renderSites(filteredSites);
-      updateResultCount(filteredSites.length);
     }
 
-    // Initialize the page
-    load();
-    
-    // Add search functionality with debouncing
-    let searchTimeout;
-    document.getElementById('searchInput').addEventListener('input', function() {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(filterSites, 200);
-    });
-    
-    // Clear search when pressing Escape
-    document.getElementById('searchInput').addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        this.value = '';
-        filterSites();
-        this.blur();
-      }
-    });
+    function setupEventListeners() {
+      // Search functionality with debouncing
+      let searchTimeout;
+      document.getElementById('searchInput').addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(filterSites, 200);
+      });
+      
+      // Clear search when pressing Escape
+      document.getElementById('searchInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          this.value = '';
+          filterSites();
+          this.blur();
+        }
+      });
 
-    // Focus search input on page load
-    document.getElementById('searchInput').focus();
+      // View toggle buttons
+      document.getElementById('viewAllBtn').addEventListener('click', () => {
+        setViewMode('all');
+      });
+      
+      document.getElementById('viewFavoritesBtn').addEventListener('click', () => {
+        setViewMode('favorites');
+      });
+      
+      // Refresh button
+      document.getElementById('refreshBtn').addEventListener('click', () => {
+        load();
+      });
+      
+      // Theme toggle
+      document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+      
+      // Icon preview modal events
+      document.getElementById('closePreview').addEventListener('click', hideIconPreview);
+      document.getElementById('previewOpenSite').addEventListener('click', () => {
+        if (state.currentPreviewSite) {
+          openSite(state.currentPreviewSite.url);
+          hideIconPreview();
+        }
+      });
+      document.getElementById('previewToggleFavorite').addEventListener('click', () => {
+        if (state.currentPreviewSite) {
+          toggleFavorite(state.currentPreviewSite.url);
+        }
+      });
+      
+      // Close modal when clicking outside
+      document.getElementById('iconPreviewModal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('iconPreviewModal')) {
+          hideIconPreview();
+        }
+      });
+      
+      // Close modal with Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.getElementById('iconPreviewModal').classList.contains('active')) {
+          hideIconPreview();
+        }
+      });
+      
+      // Focus search input on page load
+      document.getElementById('searchInput').focus();
+    }
+
+    function setViewMode(mode) {
+      state.viewMode = mode;
+      
+      // Update active button
+      document.getElementById('viewAllBtn').classList.toggle('active', mode === 'all');
+      document.getElementById('viewFavoritesBtn').classList.toggle('active', mode === 'favorites');
+      
+      // Re-render
+      renderSites(getCurrentViewSites());
+    }
+
+    function toggleTheme() {
+      if (state.theme === 'auto') {
+        state.theme = 'dark';
+      } else if (state.theme === 'dark') {
+        state.theme = 'light';
+      } else {
+        state.theme = 'auto';
+      }
+      
+      localStorage.setItem('jnvTheme', state.theme);
+      applyTheme();
+    }
+
+    function applyTheme() {
+      const themeIcon = document.querySelector('#themeToggle i');
+      
+      if (state.theme === 'dark') {
+        document.documentElement.style.setProperty('--bg', '#0f172a');
+        document.documentElement.style.setProperty('--card-bg', '#1e293b');
+        document.documentElement.style.setProperty('--text', '#f1f5f9');
+        document.documentElement.style.setProperty('--text-light', '#94a3b8');
+        document.documentElement.style.setProperty('--border', '#334155');
+        document.documentElement.style.setProperty('--shadow', '0 4px 6px -1px rgba(0, 0, 0, 0.3)');
+        themeIcon.className = 'fas fa-sun';
+      } else if (state.theme === 'light') {
+        document.documentElement.style.setProperty('--bg', '#f8fafc');
+        document.documentElement.style.setProperty('--card-bg', '#ffffff');
+        document.documentElement.style.setProperty('--text', '#1e293b');
+        document.documentElement.style.setProperty('--text-light', '#64748b');
+        document.documentElement.style.setProperty('--border', '#e2e8f0');
+        document.documentElement.style.setProperty('--shadow', '0 4px 6px -1px rgba(0, 0, 0, 0.1)');
+        themeIcon.className = 'fas fa-moon';
+      } else {
+        // Auto - use system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.style.setProperty('--bg', '#0f172a');
+          document.documentElement.style.setProperty('--card-bg', '#1e293b');
+          document.documentElement.style.setProperty('--text', '#f1f5f9');
+          document.documentElement.style.setProperty('--text-light', '#94a3b8');
+          document.documentElement.style.setProperty('--border', '#334155');
+          document.documentElement.style.setProperty('--shadow', '0 4px 6px -1px rgba(0, 0, 0, 0.3)');
+        } else {
+          document.documentElement.style.setProperty('--bg', '#f8fafc');
+          document.documentElement.style.setProperty('--card-bg', '#ffffff');
+          document.documentElement.style.setProperty('--text', '#1e293b');
+          document.documentElement.style.setProperty('--text-light', '#64748b');
+          document.documentElement.style.setProperty('--border', '#e2e8f0');
+          document.documentElement.style.setProperty('--shadow', '0 4px 6px -1px rgba(0, 0, 0, 0.1)');
+        }
+        themeIcon.className = 'fas fa-adjust';
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
   </script>
 </body>
 </html>
