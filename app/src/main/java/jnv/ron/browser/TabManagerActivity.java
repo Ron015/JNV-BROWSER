@@ -14,7 +14,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class TabManagerActivity extends AppCompatActivity {
@@ -24,8 +23,7 @@ public class TabManagerActivity extends AppCompatActivity {
     private ImageButton btnBack;
     
     private TabAdapter tabAdapter;
-    private List<Tab> tabs = new ArrayList<>();
-    private int tabCounter = 1;
+    private List<BrowserTab> tabs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +36,9 @@ public class TabManagerActivity extends AppCompatActivity {
         fabAddTab = findViewById(R.id.fabAddTab);
         btnBack = findViewById(R.id.btnBack);
 
+        // Get tabs from BrowserActivity
+        tabs = BrowserActivity.getActiveTabs();
+        
         setupRecyclerView();
         setupClickListeners();
 
@@ -60,12 +61,13 @@ public class TabManagerActivity extends AppCompatActivity {
     }
 
     private void addNewTab(String url) {
-        Tab tab = new Tab("Tab " + tabCounter++, url, "New Tab");
+        BrowserTab tab = new BrowserTab("tab_" + System.currentTimeMillis(), url, "New Tab");
         tabs.add(tab);
         tabAdapter.notifyItemInserted(tabs.size() - 1);
+        openTab(tab);
     }
 
-    private void openTab(Tab tab) {
+    private void openTab(BrowserTab tab) {
         Intent intent = new Intent(this, BrowserActivity.class);
         intent.putExtra("url", tab.url);
         startActivity(intent);
@@ -74,6 +76,8 @@ public class TabManagerActivity extends AppCompatActivity {
 
     private void closeTab(int position) {
         if (position >= 0 && position < tabs.size()) {
+            BrowserTab tab = tabs.get(position);
+            BrowserActivity.removeTab(tab.id);
             tabs.remove(position);
             tabAdapter.notifyItemRemoved(position);
             
@@ -81,6 +85,13 @@ public class TabManagerActivity extends AppCompatActivity {
                 addNewTab("https://www.google.com");
             }
         }
+    }
+
+    private void closeAllTabs() {
+        BrowserActivity.clearAllTabs();
+        tabs.clear();
+        tabAdapter.notifyDataSetChanged();
+        addNewTab("https://www.google.com");
     }
 
     private class TabAdapter extends RecyclerView.Adapter<TabAdapter.TabViewHolder> {
@@ -93,7 +104,7 @@ public class TabManagerActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull TabViewHolder holder, int position) {
-            Tab tab = tabs.get(position);
+            BrowserTab tab = tabs.get(position);
             holder.bind(tab);
         }
 
@@ -113,7 +124,7 @@ public class TabManagerActivity extends AppCompatActivity {
                 btnClose = itemView.findViewById(R.id.btnClose);
             }
 
-            public void bind(Tab tab) {
+            public void bind(BrowserTab tab) {
                 tvTitle.setText(tab.title);
                 tvUrl.setText(tab.url);
 
@@ -121,18 +132,6 @@ public class TabManagerActivity extends AppCompatActivity {
                 
                 btnClose.setOnClickListener(v -> closeTab(getAdapterPosition()));
             }
-        }
-    }
-
-    private static class Tab {
-        String id;
-        String url;
-        String title;
-
-        Tab(String id, String url, String title) {
-            this.id = id;
-            this.url = url;
-            this.title = title;
         }
     }
 }

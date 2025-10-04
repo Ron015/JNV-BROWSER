@@ -64,6 +64,15 @@ public class MainActivity extends AppCompatActivity {
         public void showToast(String message) {
             runOnUiThread(() -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show());
         }
+        
+        @JavascriptInterface
+        public void openTabManager() {
+            runOnUiThread(() -> {
+                Intent intent = new Intent(MainActivity.this, TabManagerActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
     }
 
     @Override

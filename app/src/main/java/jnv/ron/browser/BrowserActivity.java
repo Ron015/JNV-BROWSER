@@ -8,6 +8,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.webkit.*;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -33,6 +35,10 @@ public class BrowserActivity extends AppCompatActivity {
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
     private Handler handler = new Handler();
     private static final int PERMISSION_REQUEST_CODE = 100;
+    
+    // Tab management
+    private static List<BrowserTab> activeTabs = new ArrayList<>();
+    private String currentTabId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,11 +57,93 @@ public class BrowserActivity extends AppCompatActivity {
         String url = getIntent().getStringExtra("url");
         if (url != null && !url.isEmpty()) {
             loadUrl(url);
+            // Create new tab
+            currentTabId = "tab_" + System.currentTimeMillis();
+            activeTabs.add(new BrowserTab(currentTabId, url, "Loading..."));
         } else {
             loadUrl("https://www.google.com");
+            currentTabId = "tab_" + System.currentTimeMillis();
+            activeTabs.add(new BrowserTab(currentTabId, "https://www.google.com", "Google"));
         }
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.browser_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        
+        if (id == R.id.menu_tabs) {
+            openTabManager();
+            return true;
+        } else if (id == R.id.menu_new_tab) {
+            openNewTab();
+            return true;
+        } else if (id == R.id.menu_share) {
+            shareCurrentUrl();
+            return true;
+        }
+        
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void openTabManager() {
+        Intent intent = new Intent(this, TabManagerActivity.class);
+        startActivity(intent);
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+    }
+
+    private void openNewTab() {
+        Intent intent = new Intent(this, BrowserActivity.class);
+        intent.putExtra("url", "https://www.google.com");
+        startActivity(intent);
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+    }
+
+    private void shareCurrentUrl() {
+        String currentUrl = webView.getUrl();
+        if (currentUrl != null) {
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.setType("text/plain");
+            shareIntent.putExtra(Intent.EXTRA_TEXT, currentUrl);
+            startActivity(Intent.createChooser(shareIntent, "Share URL"));
+        }
+    }
+
+    // Update current tab info
+    private void updateCurrentTab(String url, String title) {
+        for (BrowserTab tab : activeTabs) {
+            if (tab.id.equals(currentTabId)) {
+                tab.url = url;
+                tab.title = title != null ? title : "New Tab";
+                break;
+            }
+        }
+    }
+
+    // Getters for TabManagerActivity
+    public static List<BrowserTab> getActiveTabs() {
+        return new ArrayList<>(activeTabs);
+    }
+
+    public static void removeTab(String tabId) {
+        for (int i = 0; i < activeTabs.size(); i++) {
+            if (activeTabs.get(i).id.equals(tabId)) {
+                activeTabs.remove(i);
+                break;
+            }
+        }
+    }
+
+    public static void clearAllTabs() {
+        activeTabs.clear();
+    }
+
+    // Rest of your existing methods remain the same...
     private void setupUI() {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
@@ -226,16 +314,18 @@ public class BrowserActivity extends AppCompatActivity {
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setTitle("Loading...");
             }
+            updateCurrentTab(url, "Loading...");
         }
 
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
             swipeRefresh.setRefreshing(false);
+            String title = view.getTitle();
             if (getSupportActionBar() != null) {
-                String title = view.getTitle();
                 getSupportActionBar().setTitle(title != null && !title.isEmpty() ? title : "Browser");
             }
+            updateCurrentTab(url, title);
         }
 
         private boolean isUrlAllowed(String url) {
@@ -304,6 +394,7 @@ public class BrowserActivity extends AppCompatActivity {
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setTitle(title != null && !title.isEmpty() ? title : "Browser");
             }
+            updateCurrentTab(view.getUrl(), title);
         }
 
         @Override
@@ -336,5 +427,18 @@ public class BrowserActivity extends AppCompatActivity {
         if (webView != null) {
             webView.destroy();
         }
+    }
+}
+
+// Tab data class
+class BrowserTab {
+    String id;
+    String url;
+    String title;
+
+    BrowserTab(String id, String url, String title) {
+        this.id = id;
+        this.url = url;
+        this.title = title;
     }
 }
