@@ -61,9 +61,9 @@ public class BrowserActivity extends AppCompatActivity {
             currentTabId = "tab_" + System.currentTimeMillis();
             activeTabs.add(new BrowserTab(currentTabId, url, "Loading..."));
         } else {
-            loadUrl("https://www.google.com");
+            loadUrl("file:///android_asset/main.html");
             currentTabId = "tab_" + System.currentTimeMillis();
-            activeTabs.add(new BrowserTab(currentTabId, "https://www.google.com", "Google"));
+            activeTabs.add(new BrowserTab(currentTabId, "file:///android_asset/main.html", "HOME"));
         }
     }
 
@@ -99,7 +99,7 @@ public class BrowserActivity extends AppCompatActivity {
 
     private void openNewTab() {
         Intent intent = new Intent(this, BrowserActivity.class);
-        intent.putExtra("url", "https://www.google.com");
+        intent.putExtra("url", "file:///android_asset/main.html");
         startActivity(intent);
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
@@ -189,11 +189,6 @@ public class BrowserActivity extends AppCompatActivity {
                 // Fallback domains
                 handler.post(() -> {
                     allowedDomains.clear();
-                    allowedDomains.add("google.com");
-                    allowedDomains.add("github.com");
-                    allowedDomains.add("youtube.com");
-                    allowedDomains.add("wikipedia.org");
-                    allowedDomains.add("stackoverflow.com");
                     Toast.makeText(this, "Using fallback domains", Toast.LENGTH_SHORT).show();
                 });
             }

@@ -44,7 +44,7 @@ public class TabManagerActivity extends AppCompatActivity {
 
         // Add initial tab if empty
         if (tabs.isEmpty()) {
-            addNewTab("https://www.google.com");
+            addNewTab("file:///android_asset/main.html");
         }
     }
 
@@ -55,7 +55,7 @@ public class TabManagerActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        fabAddTab.setOnClickListener(v -> addNewTab("https://www.google.com"));
+        fabAddTab.setOnClickListener(v -> addNewTab("file:///android_asset/main.html"));
         
         btnBack.setOnClickListener(v -> finish());
     }
@@ -91,7 +91,7 @@ public class TabManagerActivity extends AppCompatActivity {
         BrowserActivity.clearAllTabs();
         tabs.clear();
         tabAdapter.notifyDataSetChanged();
-        addNewTab("https://www.google.com");
+        addNewTab("file:///android_asset/main.html");
     }
 
     private class TabAdapter extends RecyclerView.Adapter<TabAdapter.TabViewHolder> {
