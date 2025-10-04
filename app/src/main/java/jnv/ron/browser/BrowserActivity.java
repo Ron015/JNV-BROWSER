@@ -323,6 +323,7 @@ public class BrowserActivity extends AppCompatActivity {
             String html = "<!DOCTYPE html>" +
                     "<html>" +
                     "<head>" +
+                    "<meta name='viewport' content='width=device-width, initial-scale=1.0'>" +
                     "<style>" +
                     "body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: white; }" +
                     ".blocked-container { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 40px; border-radius: 20px; text-align: center; max-width: 400px; }" +
@@ -336,7 +337,7 @@ public class BrowserActivity extends AppCompatActivity {
                     "<body>" +
                     "<div class='blocked-container'>" +
                     "<h1>🚫 Blocked</h1>" +
-                    "<p>This website is not in the allowed list for security reasons.</p>" +
+                    "<p>This website is not in the allowed list for security reasons.<br>If you want to unblock this website then contact to Satendra Sir</p>" +
                     "<div class='url'>" + blockedUrl + "</div>" +
                     "<button onclick='window.history.back()'>Go Back</button>" +
                     "</div>" +
