@@ -82,7 +82,7 @@ public class TabManagerActivity extends AppCompatActivity {
             tabAdapter.notifyItemRemoved(position);
             
             if (tabs.isEmpty()) {
-                addNewTab("https://www.google.com");
+                addNewTab("file:///android_asset/main.html");
             }
         }
     }

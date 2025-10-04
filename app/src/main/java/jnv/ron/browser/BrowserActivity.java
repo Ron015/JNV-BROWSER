@@ -11,13 +11,13 @@ import android.os.Handler;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.webkit.*;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -29,7 +29,7 @@ import java.util.concurrent.Executors;
 
 public class BrowserActivity extends AppCompatActivity {
     private WebView webView;
-    private SwipeRefreshLayout swipeRefresh;
+    private ProgressBar progressBar;
     private Toolbar toolbar;
     private List<String> allowedDomains = new ArrayList<>();
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -47,7 +47,7 @@ public class BrowserActivity extends AppCompatActivity {
 
         // Initialize views
         toolbar = findViewById(R.id.toolbar);
-        swipeRefresh = findViewById(R.id.swipeRefresh);
+        progressBar = findViewById(R.id.progressBar);
         webView = findViewById(R.id.webView);
 
         setupUI();
@@ -143,7 +143,6 @@ public class BrowserActivity extends AppCompatActivity {
         activeTabs.clear();
     }
 
-    // Rest of your existing methods remain the same...
     private void setupUI() {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
@@ -153,16 +152,9 @@ public class BrowserActivity extends AppCompatActivity {
 
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
         
-        swipeRefresh.setColorSchemeResources(
-            android.R.color.holo_blue_bright,
-            android.R.color.holo_green_light,
-            android.R.color.holo_orange_light,
-            android.R.color.holo_red_light
-        );
-        
-        swipeRefresh.setOnRefreshListener(() -> {
-            webView.reload();
-        });
+        // Setup progress bar
+        progressBar.setMax(100);
+        progressBar.setProgress(0);
     }
 
     private void loadAllowedDomains() {
@@ -284,9 +276,6 @@ public class BrowserActivity extends AppCompatActivity {
     }
 
     private void loadUrl(String url) {
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            url = "https://" + url;
-        }
         webView.loadUrl(url);
     }
 
@@ -305,7 +294,10 @@ public class BrowserActivity extends AppCompatActivity {
         @Override
         public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
             super.onPageStarted(view, url, favicon);
-            swipeRefresh.setRefreshing(true);
+            // Show progress bar when page starts loading
+            progressBar.setVisibility(android.view.View.VISIBLE);
+            progressBar.setProgress(10); // Start with 10% progress
+            
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setTitle("Loading...");
             }
@@ -315,7 +307,9 @@ public class BrowserActivity extends AppCompatActivity {
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
-            swipeRefresh.setRefreshing(false);
+            // Hide progress bar when page finishes loading
+            progressBar.setVisibility(android.view.View.GONE);
+            
             String title = view.getTitle();
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setTitle(title != null && !title.isEmpty() ? title : "Browser");
@@ -395,10 +389,22 @@ public class BrowserActivity extends AppCompatActivity {
         @Override
         public void onProgressChanged(WebView view, int newProgress) {
             super.onProgressChanged(view, newProgress);
+            
+            // Update horizontal progress bar
             if (newProgress < 100) {
-                swipeRefresh.setRefreshing(true);
+                progressBar.setVisibility(android.view.View.VISIBLE);
+                progressBar.setProgress(newProgress);
+                
+                // Smooth animation for progress
+                if (newProgress > 80) {
+                    progressBar.setProgress(95); // Slow down near completion
+                }
             } else {
-                swipeRefresh.setRefreshing(false);
+                // When loading completes, hide progress bar with a slight delay
+                handler.postDelayed(() -> {
+                    progressBar.setVisibility(android.view.View.GONE);
+                    progressBar.setProgress(0);
+                }, 200);
             }
         }
     }
