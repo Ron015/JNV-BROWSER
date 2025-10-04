@@ -42,8 +42,8 @@ jobs:
       - name: Upload Release APK to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0          # ✅ Predefined tag
-          name: "Release JNV BROWSER v1.0.0"
+          tag_name: v1.1.0          # ✅ Predefined tag
+          name: "Release JNV BROWSER v1.1.0"
           body: |
             🔥 Automatic Releas
           files: |
