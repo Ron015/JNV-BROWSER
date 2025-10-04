@@ -14,10 +14,4 @@
         android:title="Tabs"
         app:showAsAction="ifRoom" />
         
-    <item
-        android:id="@+id/menu_share"
-        android:icon="@drawable/ic_share"
-        android:title="Share"
-        app:showAsAction="ifRoom" />
-        
 </menu>

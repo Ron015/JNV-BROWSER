@@ -83,9 +83,6 @@ public class BrowserActivity extends AppCompatActivity {
         } else if (id == R.id.menu_new_tab) {
             openNewTab();
             return true;
-        } else if (id == R.id.menu_share) {
-            shareCurrentUrl();
-            return true;
         }
         
         return super.onOptionsItemSelected(item);
@@ -104,15 +101,6 @@ public class BrowserActivity extends AppCompatActivity {
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
-    private void shareCurrentUrl() {
-        String currentUrl = webView.getUrl();
-        if (currentUrl != null) {
-            Intent shareIntent = new Intent(Intent.ACTION_SEND);
-            shareIntent.setType("text/plain");
-            shareIntent.putExtra(Intent.EXTRA_TEXT, currentUrl);
-            startActivity(Intent.createChooser(shareIntent, "Share URL"));
-        }
-    }
 
     // Update current tab info
     private void updateCurrentTab(String url, String title) {
