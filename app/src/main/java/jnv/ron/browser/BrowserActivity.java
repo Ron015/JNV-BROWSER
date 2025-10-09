@@ -83,7 +83,11 @@ public class BrowserActivity extends AppCompatActivity {
         } else if (id == R.id.menu_new_tab) {
             openNewTab();
             return true;
+        } else if (id == R.id.menu_download) {
+            openDownloadsFolder();
+            return true;
         }
+        
         
         return super.onOptionsItemSelected(item);
     }
@@ -92,6 +96,24 @@ public class BrowserActivity extends AppCompatActivity {
         Intent intent = new Intent(this, TabManagerActivity.class);
         startActivity(intent);
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+    }
+    private void openDownloadsFolder() {
+        try {
+            Intent intent = new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            // Fallback: open generic file explorer if no download app found
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setType("resource/folder");
+            intent.setData(Uri.parse(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toURI().toString()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            try {
+                startActivity(intent);
+            } catch (Exception ex) {
+                Toast.makeText(this, "No file manager found 📁", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     private void openNewTab() {
