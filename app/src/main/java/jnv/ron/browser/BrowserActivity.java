@@ -177,36 +177,56 @@ public class BrowserActivity extends AppCompatActivity {
 
     private void setupWebView() {
         WebSettings webSettings = webView.getSettings();
-        
-        // Enable JavaScript and DOM
+    
+        // ✅ Core Web Features
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
         webSettings.setDatabaseEnabled(true);
         webSettings.setAllowFileAccess(true);
         webSettings.setAllowContentAccess(true);
-        
-        // Enable advanced features
+    
+        // ✅ Advanced Display & Interaction
         webSettings.setLoadWithOverviewMode(true);
         webSettings.setUseWideViewPort(true);
         webSettings.setBuiltInZoomControls(true);
         webSettings.setDisplayZoomControls(false);
         webSettings.setSupportZoom(true);
-        
-        // Enable permissions
-        webSettings.setGeolocationEnabled(true);
         webSettings.setMediaPlaybackRequiresUserGesture(false);
+        webSettings.setLoadsImagesAutomatically(true);
+        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+        webSettings.setSupportMultipleWindows(true);
+    
+        // ✅ Permissions & Access
+        webSettings.setGeolocationEnabled(true);
         webSettings.setAllowFileAccessFromFileURLs(true);
         webSettings.setAllowUniversalAccessFromFileURLs(true);
-        
-        // Cache settings (remove deprecated methods)
+        webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+    
+        // ✅ Cache & Performance
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
-
+        webSettings.setAppCacheEnabled(true);
+        webSettings.setAppCachePath(getCacheDir().getPath());
+        webSettings.setSaveFormData(true);
+        webSettings.setSavePassword(false); // 🔒 deprecated
+    
+        // ✅ Cookie Support
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
+        cookieManager.setAcceptThirdPartyCookies(webView, true);
+    
+        // ✅ Enable Web Debugging (for devs)
+        WebView.setWebContentsDebuggingEnabled(true);
+    
+        // ✅ Custom Clients
         webView.setWebViewClient(new CustomWebViewClient());
         webView.setWebChromeClient(new CustomWebChromeClient());
-        
-        // Handle downloads
-        webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
-            handleDownload(url, userAgent, contentDisposition, mimetype);
+    
+        // ✅ File uploads, camera, mic, etc.
+        webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
+    
+        // ✅ Downloads
+        webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) -> {
+            handleDownload(url, userAgent, contentDisposition, mimeType);
         });
     }
 
