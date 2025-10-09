@@ -204,8 +204,6 @@ public class BrowserActivity extends AppCompatActivity {
     
         // ✅ Cache & Performance
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        webSettings.setAppCacheEnabled(true);
-        webSettings.setAppCachePath(getCacheDir().getPath());
         webSettings.setSaveFormData(true);
         webSettings.setSavePassword(false); // 🔒 deprecated
     
